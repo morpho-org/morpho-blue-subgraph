@@ -403,9 +403,6 @@ type LendingProtocol implements Protocol @entity @regularPolling {
   " Current TVL (Total Value Locked) of the entire protocol "
   totalValueLockedUSD: BigDecimal!
 
-  " Current PCV (Protocol Controlled Value). Only relevant for protocols with PCV. "
-  protocolControlledValueUSD: BigDecimal
-
   " Revenue claimed by suppliers to the protocol. LPs on DEXs (e.g. 0.25% of the swap fee in Sushiswap). Depositors on Lending Protocols. NFT sellers on OpenSea. "
   cumulativeSupplySideRevenueUSD: BigDecimal!
 
@@ -435,9 +432,6 @@ type LendingProtocol implements Protocol @entity @regularPolling {
 
   " Sum of all historical liquidations in USD "
   cumulativeLiquidateUSD: BigDecimal!
-
-  " Total supply of minted tokens in native amounts, with same ordering as mintedTokens. Only applies to CDP "
-  mintedTokenSupplies: [BigInt!]
 
   " Total number of pools "
   totalPoolCount: Int!
@@ -489,6 +483,16 @@ type LendingProtocol implements Protocol @entity @regularPolling {
 
   " All markets that belong to this protocol "
   markets: [Market!]! @derivedFrom(field: "protocol")
+
+  #### Addons ####
+
+  owner: Bytes!
+
+  feeRecipient: Bytes!
+
+  irmEnabled: [Bytes!]!
+
+  lltvEnabled: [BigInt!]!
 }
 
 # helper entity to iterate through all markets
@@ -793,9 +797,6 @@ type Market @entity @regularPolling {
   " Amount of input tokens borrowed in this market using variable interest rates (in native terms) "
   variableBorrowedTokenBalance: BigInt
 
-  " Amount of input tokens borrowed in this market using stable interest rates (in native terms) "
-  stableBorrowedTokenBalance: BigInt
-
   " Last updated timestamp of supply/borrow index. "
   indexLastUpdatedTimestamp: BigInt
 
@@ -939,30 +940,18 @@ type Market @entity @regularPolling {
   " All flashloans made in this market"
   flashloans: [Flashloan!]! @derivedFrom(field: "market")
 
-  ##### Add Ons #####
+  ### Addons ###
 
-  " Rewards borrow speed for this market"
-  _baseTrackingBorrowSpeed: BigInt
+  totalCollateral: BigInt!
 
-  " Rewards supply speed for this market"
-  _baseTrackingSupplySpeed: BigInt
+  totalSupplyShares: BigInt!
+  totalBorrowShares: BigInt!
 
-  " The variable debt token address correlated to the reserve asset "
-  _vToken: Token
+  totalSupply: BigInt!
+  totalBorrow: BigInt!
 
-  " The stable debt token address correlated to the reserve asset "
-  _sToken: Token
+  accruedInterests: BigInt!
 
-  " The state of the protocol prior to being paused (isActive / canUseAsCollateral / canBorrowFrom) "
-  _prePauseState: [Boolean!]
-
-  " Aux: Timestamp of the last time rewards were calculated for this market. "
-  _lastRewardsUpdated: BigInt
-
-  " proportion of liquidation bonus (liquidation penalty) going to the protocol "
-  _liquidationProtocolFee: BigDecimal
-
-  _siloedBorrowing: Boolean
 }
 
 #################################

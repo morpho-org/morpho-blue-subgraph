@@ -175,6 +175,8 @@ export const BIGDECIMAL_ZERO = new BigDecimal(BIGINT_ZERO);
 export const BIGDECIMAL_ONE = new BigDecimal(BIGINT_ONE);
 export const BIGDECIMAL_HUNDRED = new BigDecimal(BigInt.fromI32(100));
 
+export const BIGDECIMAL_WAD = new BigDecimal(BigInt.fromString("1000000000000000000"));
+
 /////////////////////
 ///// Date/Time /////
 /////////////////////
