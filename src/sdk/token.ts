@@ -1,0 +1,162 @@
+import { ERC20 } from "../../generated/MorphoBlue/ERC20";
+import {
+    Address,
+    BigDecimal,
+    BigInt,
+    Bytes,
+    ethereum,
+} from "@graphprotocol/graph-ts";
+import { Token } from "../../generated/schema";
+import {
+    BIGDECIMAL_ZERO,
+    INT_EIGHTTEEN,
+    INT_NINE,
+    INT_SIXTEEN,
+    exponentToBigDecimal,
+} from "./constants";
+import {ERC20NameBytes} from "../../generated/MorphoBlue/ERC20NameBytes";
+import {ERC20SymbolBytes} from "../../generated/MorphoBlue/ERC20SymbolBytes";
+
+/**
+ * This file contains the TokenClass, which acts as
+ * a wrapper for the Token entity making it easier to
+ * use in mappings and get info about the token.
+ *
+ * Schema Version:  3.1.0
+ * SDK Version:     1.0.6
+ * Author(s):
+ *  - @dmelotik
+ *  - @dhruv-chauhan
+ */
+
+export class TokenManager {
+    private INVALID_TOKEN_DECIMALS: i32 = 0;
+    private UNKNOWN_TOKEN_VALUE: string = "unknown";
+
+    private token!: Token;
+    private event!: ethereum.Event;
+
+    constructor(
+        tokenAddress: Bytes,
+        event: ethereum.Event,
+        tokenType: string | null = null
+    ) {
+        let _token = Token.load(tokenAddress);
+        if (!_token) {
+            _token = new Token(tokenAddress);
+            _token.name = this.fetchTokenName(Address.fromBytes(tokenAddress));
+            _token.symbol = this.fetchTokenSymbol(Address.fromBytes(tokenAddress));
+            _token.decimals = this.fetchTokenDecimals(
+                Address.fromBytes(tokenAddress)
+            );
+            if (tokenType) {
+                _token.type = tokenType;
+            }
+            _token.save();
+        }
+
+        this.token = _token;
+        this.event = event;
+    }
+
+    getToken(): Token {
+        return this.token;
+    }
+
+    getDecimals(): i32 {
+        return this.token.decimals;
+    }
+
+    _getName(): string {
+        return this.token.name;
+    }
+
+    updatePrice(newPriceUSD: BigDecimal): void {
+        this.token.lastPriceBlockNumber = this.event.block.number;
+        this.token.lastPriceUSD = newPriceUSD;
+        this.token.save();
+    }
+
+    getPriceUSD(): BigDecimal {
+        if (this.token.lastPriceUSD) {
+            return this.token.lastPriceUSD!;
+        }
+        return BIGDECIMAL_ZERO;
+    }
+
+    // convert token amount to USD value
+    getAmountUSD(amount: BigInt): BigDecimal {
+        return amount
+            .toBigDecimal()
+            .div(exponentToBigDecimal(this.getDecimals()))
+            .times(this.getPriceUSD());
+    }
+    ////////////////////
+    ///// Creators /////
+    ////////////////////
+
+    private fetchTokenSymbol(tokenAddress: Address): string {
+        const contract = ERC20.bind(tokenAddress);
+        const contractSymbolBytes = ERC20SymbolBytes.bind(tokenAddress);
+
+        // try types string and bytes32 for symbol
+        let symbolValue = this.UNKNOWN_TOKEN_VALUE;
+        const symbolResult = contract.try_symbol();
+        if (!symbolResult.reverted) {
+            return symbolResult.value;
+        }
+
+        // non-standard ERC20 implementation
+        const symbolResultBytes = contractSymbolBytes.try_symbol();
+        if (!symbolResultBytes.reverted) {
+            // for broken pairs that have no symbol function exposed
+            if (!this.isNullEthValue(symbolResultBytes.value.toHexString())) {
+                symbolValue = symbolResultBytes.value.toString();
+            }
+        }
+
+        return symbolValue;
+    }
+
+    private fetchTokenName(tokenAddress: Address): string {
+        const contract = ERC20.bind(tokenAddress);
+        const contractNameBytes = ERC20NameBytes.bind(tokenAddress);
+
+        // try types string and bytes32 for name
+        let nameValue = this.UNKNOWN_TOKEN_VALUE;
+        const nameResult = contract.try_name();
+        if (!nameResult.reverted) {
+            return nameResult.value;
+        }
+
+        // non-standard ERC20 implementation
+        const nameResultBytes = contractNameBytes.try_name();
+        if (!nameResultBytes.reverted) {
+            // for broken exchanges that have no name function exposed
+            if (!this.isNullEthValue(nameResultBytes.value.toHexString())) {
+                nameValue = nameResultBytes.value.toString();
+            }
+        }
+
+        return nameValue;
+    }
+
+    private fetchTokenDecimals(tokenAddress: Address): i32 {
+        const contract = ERC20.bind(tokenAddress);
+
+        // try types uint8 for decimals
+        const decimalResult = contract.try_decimals();
+        if (!decimalResult.reverted) {
+            const decimalValue = decimalResult.value;
+            return decimalValue;
+        }
+        return this.INVALID_TOKEN_DECIMALS as i32;
+    }
+
+    private isNullEthValue(value: string): boolean {
+        return (
+            value ==
+            "0x0000000000000000000000000000000000000000000000000000000000000001"
+        );
+    }
+}

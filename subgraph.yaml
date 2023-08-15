@@ -34,6 +34,17 @@ dataSources:
       abis:
         - name: MorphoBlue
           file: ./abis/MorphoBlue.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+        - name: IRM
+          file: ./abis/IRM.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+
       eventHandlers:
         - event: AccrueInterests(indexed bytes32,uint256,uint256,uint256)
           handler: handleAccrueInterests
