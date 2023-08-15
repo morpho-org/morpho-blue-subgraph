@@ -1,0 +1,72 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: MorphoBlue
+    network: mainnet
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: MorphoBlue
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - AccrueInterests
+        - Borrow
+        - CreateMarket
+        - EnableIrm
+        - EnableLltv
+        - FlashLoan
+        - IncrementNonce
+        - Liquidate
+        - Repay
+        - SetAuthorization
+        - SetFee
+        - SetFeeRecipient
+        - SetOwner
+        - Supply
+        - SupplyCollateral
+        - Withdraw
+        - WithdrawCollateral
+      abis:
+        - name: MorphoBlue
+          file: ./abis/MorphoBlue.json
+      eventHandlers:
+        - event: AccrueInterests(indexed bytes32,uint256,uint256,uint256)
+          handler: handleAccrueInterests
+        - event: Borrow(indexed bytes32,address,indexed address,indexed address,uint256,uint256)
+          handler: handleBorrow
+        - event: CreateMarket(indexed bytes32,(address,address,address,address,uint256))
+          handler: handleCreateMarket
+        - event: EnableIrm(indexed address)
+          handler: handleEnableIrm
+        - event: EnableLltv(uint256)
+          handler: handleEnableLltv
+        - event: FlashLoan(indexed address,indexed address,uint256)
+          handler: handleFlashLoan
+        - event: IncrementNonce(indexed address,indexed address,uint256)
+          handler: handleIncrementNonce
+        - event: Liquidate(indexed bytes32,indexed address,indexed address,uint256,uint256,uint256,uint256)
+          handler: handleLiquidate
+        - event: Repay(indexed bytes32,indexed address,indexed address,uint256,uint256)
+          handler: handleRepay
+        - event: SetAuthorization(indexed address,indexed address,indexed address,bool)
+          handler: handleSetAuthorization
+        - event: SetFee(indexed bytes32,uint256)
+          handler: handleSetFee
+        - event: SetFeeRecipient(indexed address)
+          handler: handleSetFeeRecipient
+        - event: SetOwner(indexed address)
+          handler: handleSetOwner
+        - event: Supply(indexed bytes32,indexed address,indexed address,uint256,uint256)
+          handler: handleSupply
+        - event: SupplyCollateral(indexed bytes32,indexed address,indexed address,uint256)
+          handler: handleSupplyCollateral
+        - event: Withdraw(indexed bytes32,address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
+        - event: WithdrawCollateral(indexed bytes32,address,indexed address,indexed address,uint256)
+          handler: handleWithdrawCollateral
+      file: ./src/morpho-blue.ts

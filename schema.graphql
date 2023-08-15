@@ -1,0 +1,6 @@
+type ExampleEntity @entity {
+  id: Bytes!
+  count: BigInt!
+  id: Bytes! # bytes32
+  prevBorrowRate: BigInt! # uint256
+}
