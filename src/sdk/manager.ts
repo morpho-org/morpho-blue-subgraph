@@ -1,288 +1,1104 @@
-import { BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
-import { _ActiveAccount } from "../../generated/schema";
+import {
+    Address,
+    Bytes,
+    BigInt,
+    ethereum,
+    BigDecimal,
+    log,
+} from "@graphprotocol/graph-ts";
+import {
+    Borrow,
+    Deposit,
+    Fee,
+    Flashloan,
+    InterestRate,
+    LendingProtocol,
+    Liquidate,
+    Market,
+    Oracle,
+    Repay,
+    RevenueDetail,
+    Token,
+    Transfer,
+    Withdraw,
+    _MarketList,
+} from "../../generated/schema";
+import { AccountManager } from "./account";
+import {
+    activityCounter,
+    BIGDECIMAL_ZERO,
+    BIGINT_ZERO,
+    exponentToBigDecimal,
+    FeeType,
+    INT_ONE,
+    INT_ZERO,
+    PositionSide,
+    ProtocolType,
+    Transaction,
+    TransactionType,
+} from "./constants";
+import { SnapshotManager } from "./snapshots";
+import { TokenManager } from "./token";
+import { insert } from "./constants";
+import { PositionManager } from "./position";
+import {getProtocol} from "../initializers/protocol";
 
-////////////////////////
-///// Schema Enums /////
-////////////////////////
+/**
+ * This file contains the DataManager, which is used to
+ * make all of the storage changes that occur in a protocol.
+ *
+ * You can think of this as an abstraction so the developer doesn't
+ * need to think about all of the detailed storage changes that occur.
+ *
+ * Schema Version:  3.1.0
+ * SDK Version:     1.0.6
+ * Author(s):
+ *  - @dmelotik
+ *  - @dhruv-chauhan
+ */
 
-// The network names corresponding to the Network enum in the schema.
-// They also correspond to the ones in `dataSource.network()` after converting to lower case.
-// See below for a complete list:
-// https://thegraph.com/docs/en/hosted-service/what-is-hosted-service/#supported-networks-on-the-hosted-service
-export namespace Network {
-    export const ARBITRUM_ONE = "ARBITRUM_ONE";
-    export const ARWEAVE_MAINNET = "ARWEAVE_MAINNET";
-    export const AURORA = "AURORA";
-    export const AVALANCHE = "AVALANCHE";
-    export const BOBA = "BOBA";
-    export const BSC = "BSC"; // aka BNB Chain
-    export const CELO = "CELO";
-    export const COSMOS = "COSMOS";
-    export const CRONOS = "CRONOS";
-    export const MAINNET = "MAINNET"; // Ethereum mainnet
-    export const FANTOM = "FANTOM";
-    export const FUSE = "FUSE";
-    export const HARMONY = "HARMONY";
-    export const JUNO = "JUNO";
-    export const MOONBEAM = "MOONBEAM";
-    export const MOONRIVER = "MOONRIVER";
-    export const NEAR_MAINNET = "NEAR_MAINNET";
-    export const OPTIMISM = "OPTIMISM";
-    export const OSMOSIS = "OSMOSIS";
-    export const MATIC = "MATIC"; // aka Polygon
-    export const XDAI = "XDAI"; // aka Gnosis Chain
+export class ProtocolData {
+    constructor(
+        public readonly protocolID: Bytes,
+        public readonly protocol: string,
+        public readonly name: string,
+        public readonly slug: string,
+        public readonly network: string,
+        public readonly lendingType: string,
+        public readonly lenderPermissionType: string | null,
+        public readonly borrowerPermissionType: string | null,
+        public readonly poolCreatorPermissionType: string | null,
+        public readonly collateralizationType: string | null,
+        public readonly riskType: string | null
+    ) {}
 }
 
-export namespace ProtocolType {
-    export const EXCHANGE = "EXCHANGE";
-    export const LENDING = "LENDING";
-    export const YIELD = "YIELD";
-    export const BRIDGE = "BRIDGE";
-    export const GENERIC = "GENERIC";
-}
+export class DataManager {
+    private event!: ethereum.Event;
+    private protocol!: LendingProtocol;
+    private market!: Market;
+    private inputToken!: TokenManager;
+    private oracle!: Oracle;
+    private snapshots!: SnapshotManager;
+    private newMarket: boolean = false;
 
-export namespace LendingType {
-    export const CDP = "CDP";
-    export const POOLED = "POOLED";
-}
+    constructor(
+        marketID: Bytes,
+        event: ethereum.Event,
+    ) {
+        this.protocol = getProtocol();
+        let _market = Market.load(marketID);
+        if(!_market) {
+            log.critical("Market {} does not exist", [marketID.toHexString()]);
+        }
+        _market = _market as Market;
 
-export namespace PermissionType {
-    export const WHITELIST_ONLY = "WHITELIST_ONLY";
-    export const PERMISSIONED = "PERMISSIONED";
-    export const PERMISSIONLESS = "PERMISSIONLESS";
-    export const ADMIN = "ADMIN";
-}
+        this.inputToken = new TokenManager(_market.inputToken, event);
 
-export namespace RiskType {
-    export const GLOBAL = "GLOBAL";
-    export const ISOLATED = "ISOLATED";
-}
+        // create new market
+        this.market = _market;
+        this.event = event;
 
-export namespace CollateralizationType {
-    export const OVER_COLLATERALIZED = "OVER_COLLATERALIZED";
-    export const UNDER_COLLATERALIZED = "UNDER_COLLATERALIZED";
-    export const UNCOLLATERALIZED = "UNCOLLATERALIZED";
-}
+        // load snapshots
+        this.snapshots = new SnapshotManager(event, this.protocol, this.market);
 
-export namespace TokenType {
-    export const REBASING = "REBASING";
-    export const NON_REBASING = "NON_REBASING";
-}
-
-export namespace InterestRateType {
-    export const STABLE = "STABLE";
-    export const VARIABLE = "VARIABLE";
-    export const FIXED = "FIXED";
-}
-export type InterestRateType = string;
-
-export namespace InterestRateSide {
-    export const LENDER = "LENDER";
-    export const BORROWER = "BORROWER";
-}
-
-export namespace FeeType {
-    export const LIQUIDATION_FEE = "LIQUIDATION_FEE";
-    export const ADMIN_FEE = "ADMIN_FEE";
-    export const PROTOCOL_FEE = "PROTOCOL_FEE";
-    export const MINT_FEE = "MINT_FEE";
-    export const WITHDRAW_FEE = "WITHDRAW_FEE";
-    export const FLASHLOAN_PROTOCOL_FEE = "FLASHLOAN_PROTOCOL_FEE";
-    export const FLASHLOAN_LP_FEE = "FLASHLOAN_LP_FEE";
-    export const OTHER = "OTHER";
-}
-
-export namespace PositionSide {
-    export const COLLATERAL = "COLLATERAL";
-    export const BORROWER = "BORROWER";
-}
-
-export namespace OracleSource {
-    export const UNISWAP = "UNISWAP";
-    export const BALANCER = "BALANCER";
-    export const CHAINLINK = "CHAINLINK";
-    export const YEARN = "YEARN";
-    export const SUSHISWAP = "SUSHISWAP";
-    export const CURVE = "CURVE";
-}
-
-export namespace TransactionType {
-    export const DEPOSIT = "DEPOSIT";
-    export const WITHDRAW = "WITHDRAW";
-    export const BORROW = "BORROW";
-    export const REPAY = "REPAY";
-    export const LIQUIDATE = "LIQUIDATE";
-    export const TRANSFER = "TRANSFER";
-    export const FLASHLOAN = "FLASHLOAN";
-
-    export const LIQUIDATOR = "LIQUIDATOR";
-    export const LIQUIDATEE = "LIQUIDATEE";
-
-    export const SWAP = "SWAP"; // Swap between interest rate types
-}
-
-export namespace AccountActivity {
-    export const DAILY = "DAILY";
-    export const HOURLY = "HOURLY";
-}
-
-export namespace RewardTokenType {
-    export const DEPOSIT = "DEPOSIT";
-    export const VARIABLE_BORROW = "VARIABLE_BORROW";
-    export const STABLE_BORROW = "STABLE_BORROW";
-    export const STAKE = "STAKE";
-}
-
-export enum Transaction {
-    DEPOSIT = 0,
-    WITHDRAW = 1,
-    BORROW = 2,
-    REPAY = 3,
-    LIQUIDATE = 4,
-    TRANSFER = 5,
-    FLASHLOAN = 6,
-}
-
-////////////////////////
-///// Type Helpers /////
-////////////////////////
-
-export const INT_NEGATIVE_ONE = -1 as i32;
-export const INT_ZERO = 0 as i32;
-export const INT_ONE = 1 as i32;
-export const INT_TWO = 2 as i32;
-export const INT_THREE = 3 as i32;
-export const INT_FOUR = 4 as i32;
-export const INT_FIVE = 5 as i32;
-export const INT_SIX = 6 as i32;
-export const INT_NINE = 9 as i32;
-export const INT_TEN = 10 as i32;
-export const INT_SIXTEEN = 16 as i32;
-export const INT_EIGHTTEEN = 18 as i32;
-export const INT_THIRTY_TWO = 32 as i32;
-export const INT_SIXTY_FOUR = 64 as i32;
-export const INT_152 = 152 as i32;
-
-export const BIGINT_NEGATIVE_ONE = BigInt.fromI32(-1);
-export const BIGINT_ZERO = BigInt.fromI32(0);
-export const BIGINT_ONE = BigInt.fromI32(1);
-export const BIGINT_HUNDRED = BigInt.fromI32(100);
-export const BIGINT_THREE_HUNDRED = BigInt.fromI32(300);
-export const BIGINT_TEN_TO_EIGHTEENTH = BigInt.fromString("10").pow(18);
-
-export const BIGDECIMAL_ZERO = new BigDecimal(BIGINT_ZERO);
-export const BIGDECIMAL_ONE = new BigDecimal(BIGINT_ONE);
-export const BIGDECIMAL_HUNDRED = new BigDecimal(BigInt.fromI32(100));
-
-/////////////////////
-///// Date/Time /////
-/////////////////////
-
-export const DAYS_PER_YEAR = 365;
-export const SECONDS_PER_YEAR = 60 * 60 * 24 * DAYS_PER_YEAR;
-export const SECONDS_PER_DAY = 60 * 60 * 24; // 86400
-export const SECONDS_PER_HOUR = 60 * 60; // 3600
-
-export const ETHEREUM_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 13; // 13 = seconds per block
-export const AVALANCHE_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 2; // 2 = seconds per block. This is NOT ideal since avalanche has variable block time.
-export const FANTOM_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 1; // 1 = seconds per block. This is NOT ideal since fantom has variable block time.
-export const BSC_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 3; // 3 = seconds per block
-export const MATIC_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 2; // 2 = seconds per block
-export const ARBITRUM_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 1; // 1 = seconds per block.
-
-// n => 10^n
-export function exponentToBigDecimal(decimals: i32): BigDecimal {
-    let result = BIGINT_ONE;
-    const ten = BigInt.fromI32(10);
-    for (let i = 0; i < decimals; i++) {
-        result = result.times(ten);
+        // load oracle
+        if (this.market.oracle) {
+            this.oracle = Oracle.load(this.market.oracle!)!;
+        }
     }
-    return result.toBigDecimal();
-}
 
-// BigInt to BigDecimal
-export function bigIntToBigDecimal(x: BigInt, decimals: i32): BigDecimal {
-    return x.toBigDecimal().div(exponentToBigDecimal(decimals));
-}
+    /////////////////
+    //// Getters ////
+    /////////////////
 
-// bigDecimal to BigInt
-export function bigDecimalToBigInt(x: BigDecimal): BigInt {
-    return BigInt.fromString(x.truncate(0).toString());
-}
+    getMarket(): Market {
+        return this.market;
+    }
 
-//change number of decimals for BigDecimal
-export function BDChangeDecimals(
-    x: BigDecimal,
-    from: i32,
-    to: i32
-): BigDecimal {
-    if (to > from) {
-        // increase number of decimals
-        const diffMagnitude = exponentToBigDecimal(to - from);
-        return x.times(diffMagnitude);
-    } else if (to < from) {
-        // decrease number of decimals
-        const diffMagnitude = exponentToBigDecimal(from - to);
-        return x.div(diffMagnitude);
-    } else {
-        return x;
+    isNewMarket(): boolean {
+        return this.newMarket;
     }
-}
 
-// insert value into arr at index
-export function insert<Type>(
-    arr: Array<Type>,
-    value: Type,
-    index: i32 = -1
-): Array<Type> {
-    if (arr.length == 0) {
-        return [value];
+    saveMarket(): void {
+        this.market.save();
     }
-    if (index == -1 || index > arr.length) {
-        index = arr.length;
-    }
-    const result: Type[] = [];
-    for (let i = 0; i < index; i++) {
-        result.push(arr[i]);
-    }
-    result.push(value);
-    for (let i = index; i < arr.length; i++) {
-        result.push(arr[i]);
-    }
-    return result;
-}
 
-// returns the increment to update the usage activity by
-// 1 for a new account in the specified period, otherwise 0
-export function activityCounter(
-    account: Bytes,
-    transactionType: string,
-    useTransactionType: boolean,
-    intervalID: i32, // 0 = no intervalID
-    marketID: Bytes | null = null
-): i32 {
-    let activityID = account
-        .toHexString()
-        .concat("-")
-        .concat(intervalID.toString());
-    if (marketID) {
-        activityID = activityID.concat("-").concat(marketID.toHexString());
+    getInputToken(): Token {
+        return this.inputToken.getToken();
     }
-    if (useTransactionType) {
-        activityID = activityID.concat("-").concat(transactionType);
+
+    getOracleAddress(): Address {
+        return Address.fromBytes(this.oracle.oracleAddress);
     }
-    let activeAccount = _ActiveAccount.load(activityID);
-    if (!activeAccount) {
-        // if account / market only + transactionType is LIQUIDATEE
-        // then do not count that account as it did not spend gas to use the protocol
-        if (!useTransactionType && transactionType == TransactionType.LIQUIDATEE) {
-            return INT_ZERO;
+
+    getOrUpdateRate(
+        rateSide: string,
+        rateType: string,
+        interestRate: BigDecimal
+    ): InterestRate {
+        const interestRateID = rateSide
+            .concat("-")
+            .concat(rateType)
+            .concat("-")
+            .concat(this.market.id.toHexString());
+        let rate = InterestRate.load(interestRateID);
+        if (!rate) {
+            rate = new InterestRate(interestRateID);
+            rate.side = rateSide;
+            rate.type = rateType;
+        }
+        rate.rate = interestRate;
+        rate.save();
+
+        let marketRates = this.market.rates;
+        if (!marketRates) {
+            marketRates = [];
         }
 
-        activeAccount = new _ActiveAccount(activityID);
-        activeAccount.save();
-        return INT_ONE;
+        if (marketRates.indexOf(interestRateID) == -1) {
+            marketRates.push(interestRateID);
+        }
+        this.market.rates = marketRates;
+        this.saveMarket();
+
+        return rate;
     }
 
-    return INT_ZERO;
+    getOrUpdateFee(
+        feeType: string,
+        flatFee: BigDecimal | null = null,
+        rate: BigDecimal | null = null
+    ): Fee {
+        let fee = Fee.load(feeType);
+        if (!fee) {
+            fee = new Fee(feeType);
+            fee.type = feeType;
+        }
+
+        fee.rate = rate;
+        fee.save();
+
+        let protocolFees = this.protocol.fees;
+        if (!protocolFees) {
+            protocolFees = [];
+        }
+
+        if (protocolFees.indexOf(feeType) == -1) {
+            protocolFees.push(feeType);
+        }
+        this.protocol.fees = protocolFees;
+        this.protocol.save();
+
+        return fee;
+    }
+
+    getAddress(): Address {
+        return Address.fromBytes(this.market.id);
+    }
+
+    getOrCreateRevenueDetail(id: Bytes, isMarket: boolean): RevenueDetail {
+        let details = RevenueDetail.load(id);
+        if (!details) {
+            details = new RevenueDetail(id);
+            details.sources = [];
+            details.amountsUSD = [];
+            details.save();
+
+            if (isMarket) {
+                this.market.revenueDetail = details.id;
+                this.saveMarket();
+            } else {
+                this.protocol.revenueDetail = details.id;
+                this.protocol.save();
+            }
+        }
+
+        return details;
+    }
+
+    //////////////////
+    //// Creators ////
+    //////////////////
+
+    createDeposit(
+        asset: Bytes,
+        account: Bytes,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        newBalance: BigInt,
+        interestType: string | null = null,
+        isIsolated: boolean = false,
+        principal: BigInt | null = null
+    ): Deposit {
+        const depositor = new AccountManager(account);
+        if (depositor.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        const position = new PositionManager(
+            depositor.getAccount(),
+            this.market,
+            PositionSide.COLLATERAL,
+            interestType
+        );
+        position.addPosition(
+            this.event,
+            asset,
+            this.protocol,
+            newBalance,
+            TransactionType.DEPOSIT,
+            this.market.inputTokenPriceUSD,
+            principal
+        );
+        if (isIsolated) {
+            position.setIsolation(isIsolated);
+        }
+
+        const deposit = new Deposit(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.DEPOSIT)
+        );
+        deposit.hash = this.event.transaction.hash;
+        deposit.nonce = this.event.transaction.nonce;
+        deposit.logIndex = this.event.logIndex.toI32();
+        deposit.gasPrice = this.event.transaction.gasPrice;
+        deposit.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        deposit.gasLimit = this.event.transaction.gasLimit;
+        deposit.blockNumber = this.event.block.number;
+        deposit.timestamp = this.event.block.timestamp;
+        deposit.account = account;
+        deposit.market = this.market.id;
+        deposit.position = position.getPositionID()!;
+        deposit.asset = asset;
+        deposit.amount = amount;
+        deposit.amountUSD = amountUSD;
+        deposit.save();
+
+        this.updateTransactionData(TransactionType.DEPOSIT, amount, amountUSD);
+        this.updateUsageData(TransactionType.DEPOSIT, account);
+
+        return deposit;
+    }
+
+    createWithdraw(
+        asset: Bytes,
+        account: Bytes,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        newBalance: BigInt,
+        interestType: string | null = null,
+        principal: BigInt | null = null
+    ): Withdraw | null {
+        const withdrawer = new AccountManager(account);
+        if (withdrawer.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        const position = new PositionManager(
+            withdrawer.getAccount(),
+            this.market,
+            PositionSide.COLLATERAL,
+            interestType
+        );
+        position.subtractPosition(
+            this.event,
+            this.protocol,
+            newBalance,
+            TransactionType.WITHDRAW,
+            this.market.inputTokenPriceUSD,
+            principal
+        );
+        const positionID = position.getPositionID();
+        if (!positionID) {
+            log.error(
+                "[createWithdraw] positionID is null for market: {} account: {}",
+                [this.market.id.toHexString(), account.toHexString()]
+            );
+            return null;
+        }
+
+        const withdraw = new Withdraw(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.WITHDRAW)
+        );
+        withdraw.hash = this.event.transaction.hash;
+        withdraw.nonce = this.event.transaction.nonce;
+        withdraw.logIndex = this.event.logIndex.toI32();
+        withdraw.gasPrice = this.event.transaction.gasPrice;
+        withdraw.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        withdraw.gasLimit = this.event.transaction.gasLimit;
+        withdraw.blockNumber = this.event.block.number;
+        withdraw.timestamp = this.event.block.timestamp;
+        withdraw.account = account;
+        withdraw.market = this.market.id;
+        withdraw.position = positionID!;
+        withdraw.asset = asset;
+        withdraw.amount = amount;
+        withdraw.amountUSD = amountUSD;
+        withdraw.save();
+
+        this.updateTransactionData(TransactionType.WITHDRAW, amount, amountUSD);
+        this.updateUsageData(TransactionType.WITHDRAW, account);
+
+        return withdraw;
+    }
+
+    createBorrow(
+        asset: Bytes,
+        account: Bytes,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        newBalance: BigInt,
+        tokenPriceUSD: BigDecimal, // used for different borrow token in CDP
+        interestType: string | null = null,
+        isIsolated: boolean = false,
+        principal: BigInt | null = null
+    ): Borrow {
+        const borrower = new AccountManager(account);
+        if (borrower.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        const position = new PositionManager(
+            borrower.getAccount(),
+            this.market,
+            PositionSide.BORROWER,
+            interestType
+        );
+        position.addPosition(
+            this.event,
+            asset,
+            this.protocol,
+            newBalance,
+            TransactionType.BORROW,
+            tokenPriceUSD,
+            principal
+        );
+
+        if (isIsolated) {
+            position.setIsolation(isIsolated);
+        }
+
+        const borrow = new Borrow(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.BORROW)
+        );
+        borrow.hash = this.event.transaction.hash;
+        borrow.nonce = this.event.transaction.nonce;
+        borrow.logIndex = this.event.logIndex.toI32();
+        borrow.gasPrice = this.event.transaction.gasPrice;
+        borrow.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        borrow.gasLimit = this.event.transaction.gasLimit;
+        borrow.blockNumber = this.event.block.number;
+        borrow.timestamp = this.event.block.timestamp;
+        borrow.account = account;
+        borrow.market = this.market.id;
+        borrow.position = position.getPositionID()!;
+        borrow.asset = asset;
+        borrow.amount = amount;
+        borrow.amountUSD = amountUSD;
+        borrow.save();
+
+        this.updateTransactionData(TransactionType.BORROW, amount, amountUSD);
+        this.updateUsageData(TransactionType.BORROW, account);
+
+        return borrow;
+    }
+
+    createRepay(
+        asset: Bytes,
+        account: Bytes,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        newBalance: BigInt,
+        tokenPriceUSD: BigDecimal, // used for different borrow token in CDP
+        interestType: string | null = null,
+        principal: BigInt | null = null
+    ): Repay | null {
+        const repayer = new AccountManager(account);
+        if (repayer.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        const position = new PositionManager(
+            repayer.getAccount(),
+            this.market,
+            PositionSide.BORROWER,
+            interestType
+        );
+        position.subtractPosition(
+            this.event,
+            this.protocol,
+            newBalance,
+            TransactionType.REPAY,
+            tokenPriceUSD,
+            principal
+        );
+        const positionID = position.getPositionID();
+        if (!positionID) {
+            log.error("[createRepay] positionID is null for market: {} account: {}", [
+                this.market.id.toHexString(),
+                account.toHexString(),
+            ]);
+            return null;
+        }
+
+        const repay = new Repay(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.REPAY)
+        );
+        repay.hash = this.event.transaction.hash;
+        repay.nonce = this.event.transaction.nonce;
+        repay.logIndex = this.event.logIndex.toI32();
+        repay.gasPrice = this.event.transaction.gasPrice;
+        repay.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        repay.gasLimit = this.event.transaction.gasLimit;
+        repay.blockNumber = this.event.block.number;
+        repay.timestamp = this.event.block.timestamp;
+        repay.account = account;
+        repay.market = this.market.id;
+        repay.position = positionID!;
+        repay.asset = asset;
+        repay.amount = amount;
+        repay.amountUSD = amountUSD;
+        repay.save();
+
+        this.updateTransactionData(TransactionType.REPAY, amount, amountUSD);
+        this.updateUsageData(TransactionType.REPAY, account);
+
+        return repay;
+    }
+
+    /**
+     * Creates a Liquidate entity for a liquidation, update liquidatee and liquidator positions
+     *
+     * @param asset The collateral asset that is seized by the protocol and transfered to the liquidator.
+     * @param liquidator The liquidator.
+     * @param liquidatee The borrower that is liquidated.
+     * @param amount The amount of asset being liquidated.
+     * @param amountUSD The amount in USD.
+     * @param profitUSD Liquidator's profit from the liquidation.
+     * @param newCollateralBalance The liquidatee's new borrowing balance after the liquidation (usually ZERO).
+     * @param interestType Optional - The InterestType of liquidatee's position (FIXED, VARIABLE, etc.).
+     * @param subtractBorrowerPosition - whether to subtract borrower/debt position involved in the liquidation
+     * @returns A Liquidate entity or null
+     */
+    createLiquidate(
+        asset: Bytes,
+        debtTokenId: Bytes,
+        liquidator: Address,
+        liquidatee: Address,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        profitUSD: BigDecimal,
+        newCollateralBalance: BigInt,
+        newBorrowerBalance: BigInt,
+        interestType: string | null = null,
+        subtractBorrowerPosition: bool = true
+    ): Liquidate | null {
+        const positions: string[] = []; // positions touched by this liquidation
+        const liquidatorAccount = new AccountManager(liquidator);
+        if (liquidatorAccount.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        liquidatorAccount.countLiquidate();
+        // Note: Be careful, some protocols might give the liquidated collateral to the liquidator
+        //       in collateral in the market. But that is not always the case so we don't do it here.
+
+        const liquidateeAccount = new AccountManager(liquidatee);
+        const collateralPosition = new PositionManager(
+            liquidateeAccount.getAccount(),
+            this.market,
+            PositionSide.COLLATERAL,
+            interestType
+        );
+
+        const collateralPositionID = collateralPosition.subtractPosition(
+            this.event,
+            this.protocol,
+            newCollateralBalance,
+            TransactionType.LIQUIDATE,
+            this.market.inputTokenPriceUSD
+        );
+        if (!collateralPositionID) {
+            log.error(
+                "[createLiquidate] positionID is null for market: {} account: {}",
+                [this.market.id.toHexString(), liquidatee.toHexString()]
+            );
+
+            return null;
+        }
+        positions.push(collateralPositionID!);
+        // we may want to do call subtractPosition outside this function
+        // to close both stable and variable borrowing poositions, e.g.
+        // in aave-forks
+        if (subtractBorrowerPosition) {
+            const debtMarket = Market.load(debtTokenId);
+            if (!debtMarket) {
+                log.error("[createLiquidate] market {} not found", [
+                    debtTokenId.toHexString(),
+                ]);
+                return null;
+            }
+            const borrowerPosition = new PositionManager(
+                liquidateeAccount.getAccount(),
+                debtMarket,
+                PositionSide.BORROWER,
+                interestType
+            );
+
+            const borrowerPositionID = borrowerPosition.subtractPosition(
+                this.event,
+                this.protocol,
+                newBorrowerBalance,
+                TransactionType.LIQUIDATE,
+                debtMarket.inputTokenPriceUSD
+            );
+            if (!borrowerPositionID) {
+                log.error(
+                    "[createLiquidate] positionID is null for market: {} account: {}",
+                    [debtMarket.id.toHexString(), liquidatee.toHexString()]
+                );
+                return null;
+            }
+            positions.push(borrowerPositionID!);
+        }
+
+        // Note:
+        //  - liquidatees are not considered users since they are not spending gas for the transaction
+        //  - It is possible in some protocols for the liquidator to incur a position if they are transferred collateral tokens
+        const liquidate = new Liquidate(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.LIQUIDATE)
+        );
+        liquidate.hash = this.event.transaction.hash;
+        liquidate.nonce = this.event.transaction.nonce;
+        liquidate.logIndex = this.event.logIndex.toI32();
+        liquidate.gasPrice = this.event.transaction.gasPrice;
+        liquidate.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        liquidate.gasLimit = this.event.transaction.gasLimit;
+        liquidate.blockNumber = this.event.block.number;
+        liquidate.timestamp = this.event.block.timestamp;
+        liquidate.liquidator = liquidator;
+        liquidate.liquidatee = liquidatee;
+        liquidate.market = this.market.id;
+        liquidate.positions = positions;
+        liquidate.asset = asset;
+        liquidate.amount = amount;
+        liquidate.amountUSD = amountUSD;
+        liquidate.profitUSD = profitUSD;
+        liquidate.save();
+
+        this.updateTransactionData(TransactionType.LIQUIDATE, amount, amountUSD);
+        this.updateUsageData(TransactionType.LIQUIDATEE, liquidatee);
+        this.updateUsageData(TransactionType.LIQUIDATOR, liquidator);
+
+        return liquidate;
+    }
+
+    createTransfer(
+        asset: Bytes,
+        sender: Address,
+        receiver: Address,
+        amount: BigInt,
+        amountUSD: BigDecimal,
+        senderNewBalance: BigInt,
+        receiverNewBalance: BigInt,
+        interestType: string | null = null
+    ): Transfer | null {
+        const transferrer = new AccountManager(sender);
+        if (transferrer.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        const transferrerPosition = new PositionManager(
+            transferrer.getAccount(),
+            this.market,
+            PositionSide.COLLATERAL,
+            interestType
+        );
+        transferrerPosition.subtractPosition(
+            this.event,
+            this.protocol,
+            senderNewBalance,
+            TransactionType.TRANSFER,
+            this.market.inputTokenPriceUSD
+        );
+        const positionID = transferrerPosition.getPositionID();
+        if (!positionID) {
+            log.error(
+                "[createTransfer] positionID is null for market: {} account: {}",
+                [this.market.id.toHexString(), receiver.toHexString()]
+            );
+            return null;
+        }
+
+        const recieverAccount = new AccountManager(receiver);
+        // receivers are not considered users since they are not spending gas for the transaction
+        const receiverPosition = new PositionManager(
+            recieverAccount.getAccount(),
+            this.market,
+            PositionSide.COLLATERAL,
+            interestType
+        );
+        receiverPosition.addPosition(
+            this.event,
+            asset,
+            this.protocol,
+            receiverNewBalance,
+            TransactionType.TRANSFER,
+            this.market.inputTokenPriceUSD
+        );
+
+        const transfer = new Transfer(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.TRANSFER)
+        );
+        transfer.hash = this.event.transaction.hash;
+        transfer.nonce = this.event.transaction.nonce;
+        transfer.logIndex = this.event.logIndex.toI32();
+        transfer.gasPrice = this.event.transaction.gasPrice;
+        transfer.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        transfer.gasLimit = this.event.transaction.gasLimit;
+        transfer.blockNumber = this.event.block.number;
+        transfer.timestamp = this.event.block.timestamp;
+        transfer.sender = sender;
+        transfer.receiver = receiver;
+        transfer.market = this.market.id;
+        transfer.positions = [receiverPosition.getPositionID()!, positionID!];
+        transfer.asset = asset;
+        transfer.amount = amount;
+        transfer.amountUSD = amountUSD;
+        transfer.save();
+
+        this.updateTransactionData(TransactionType.TRANSFER, amount, amountUSD);
+        this.updateUsageData(TransactionType.TRANSFER, sender);
+
+        return transfer;
+    }
+
+    createFlashloan(
+        asset: Address,
+        account: Address,
+        amount: BigInt,
+        amountUSD: BigDecimal
+    ): Flashloan {
+        const flashloaner = new AccountManager(account);
+        if (flashloaner.isNewUser()) {
+            this.protocol.cumulativeUniqueUsers += INT_ONE;
+            this.protocol.save();
+        }
+        flashloaner.countFlashloan();
+
+        const flashloan = new Flashloan(
+            this.event.transaction.hash
+                .concatI32(this.event.logIndex.toI32())
+                .concatI32(Transaction.FLASHLOAN)
+        );
+        flashloan.hash = this.event.transaction.hash;
+        flashloan.nonce = this.event.transaction.nonce;
+        flashloan.logIndex = this.event.logIndex.toI32();
+        flashloan.gasPrice = this.event.transaction.gasPrice;
+        flashloan.gasUsed = this.event.receipt ? this.event.receipt!.gasUsed : null;
+        flashloan.gasLimit = this.event.transaction.gasLimit;
+        flashloan.blockNumber = this.event.block.number;
+        flashloan.timestamp = this.event.block.timestamp;
+        flashloan.account = account;
+        flashloan.market = this.market.id;
+        flashloan.asset = asset;
+        flashloan.amount = amount;
+        flashloan.amountUSD = amountUSD;
+        flashloan.save();
+
+        this.updateTransactionData(TransactionType.FLASHLOAN, amount, amountUSD);
+        this.updateUsageData(TransactionType.FLASHLOAN, account);
+
+        return flashloan;
+    }
+
+    // used to update tvl, borrow balance, reserves, etc. in market and protocol
+    updateMarketAndProtocolData(
+        inputTokenPriceUSD: BigDecimal,
+        newInputTokenBalance: BigInt,
+        newVariableBorrowBalance: BigInt | null = null,
+        newReserveBalance: BigInt | null = null,
+    ): void {
+        const mantissaFactorBD = exponentToBigDecimal(
+            this.inputToken.getDecimals()
+        );
+        this.inputToken.updatePrice(inputTokenPriceUSD);
+        this.market.inputTokenPriceUSD = inputTokenPriceUSD;
+        this.market.inputTokenBalance = newInputTokenBalance;
+        if (newVariableBorrowBalance) {
+            this.market.variableBorrowedTokenBalance = newVariableBorrowBalance;
+        }
+        if (newReserveBalance) {
+            this.market.reserves = newReserveBalance
+                .toBigDecimal()
+                .div(mantissaFactorBD)
+                .times(inputTokenPriceUSD);
+        }
+        const vBorrowAmount = this.market.variableBorrowedTokenBalance
+            ? this.market
+                .variableBorrowedTokenBalance!.toBigDecimal()
+                .div(mantissaFactorBD)
+            : BIGDECIMAL_ZERO;
+
+        this.market.totalValueLockedUSD = newInputTokenBalance
+            .toBigDecimal()
+            .div(mantissaFactorBD)
+            .times(inputTokenPriceUSD);
+        this.market.totalDepositBalanceUSD = this.market.totalValueLockedUSD;
+        this.saveMarket();
+
+        let totalValueLockedUSD = BIGDECIMAL_ZERO;
+        let totalBorrowBalanceUSD = BIGDECIMAL_ZERO;
+        const marketList = this.getOrAddMarketToList();
+        for (let i = 0; i < marketList.length; i++) {
+            const _market = Market.load(marketList[i]);
+            if (!_market) {
+                log.error("[updateMarketAndProtocolData] Market not found: {}", [
+                    marketList[i].toHexString(),
+                ]);
+                continue;
+            }
+            totalValueLockedUSD = totalValueLockedUSD.plus(
+                _market.totalValueLockedUSD
+            );
+            totalBorrowBalanceUSD = totalBorrowBalanceUSD.plus(
+                _market.totalBorrowBalanceUSD
+            );
+        }
+        this.protocol.totalValueLockedUSD = totalValueLockedUSD;
+        this.protocol.totalDepositBalanceUSD = totalValueLockedUSD;
+        this.protocol.totalBorrowBalanceUSD = totalBorrowBalanceUSD;
+        this.protocol.save();
+    }
+
+    updateSupplyIndex(supplyIndex: BigInt): void {
+        this.market.supplyIndex = supplyIndex;
+        this.market.indexLastUpdatedTimestamp = this.event.block.timestamp;
+        this.saveMarket();
+    }
+
+    updateBorrowIndex(borrowIndex: BigInt): void {
+        this.market.borrowIndex = borrowIndex;
+        this.market.indexLastUpdatedTimestamp = this.event.block.timestamp;
+        this.saveMarket();
+    }
+
+    //
+    //
+    // Update the protocol revenue
+    addProtocolRevenue(
+        protocolRevenueDelta: BigDecimal,
+        fee: Fee | null = null
+    ): void {
+        this.updateRevenue(protocolRevenueDelta, BIGDECIMAL_ZERO);
+
+        if (!fee) {
+            fee = this.getOrUpdateFee(FeeType.OTHER);
+        }
+
+        const marketRevDetails = this.getOrCreateRevenueDetail(
+            this.market.id,
+            true
+        );
+        const protocolRevenueDetail = this.getOrCreateRevenueDetail(
+            this.protocol.id,
+            false
+        );
+
+        this.insertInOrder(marketRevDetails, protocolRevenueDelta, fee.id);
+        this.insertInOrder(protocolRevenueDetail, protocolRevenueDelta, fee.id);
+    }
+
+    //
+    //
+    // Update the protocol revenue
+    addSupplyRevenue(
+        supplyRevenueDelta: BigDecimal,
+        fee: Fee | null = null
+    ): void {
+        this.updateRevenue(BIGDECIMAL_ZERO, supplyRevenueDelta);
+
+        if (!fee) {
+            fee = this.getOrUpdateFee(FeeType.OTHER);
+        }
+
+        const marketRevDetails = this.getOrCreateRevenueDetail(
+            this.market.id,
+            true
+        );
+        const protocolRevenueDetail = this.getOrCreateRevenueDetail(
+            this.protocol.id,
+            false
+        );
+
+        this.insertInOrder(marketRevDetails, supplyRevenueDelta, fee.id);
+        this.insertInOrder(protocolRevenueDetail, supplyRevenueDelta, fee.id);
+    }
+
+    private updateRevenue(
+        protocolRevenueDelta: BigDecimal,
+        supplyRevenueDelta: BigDecimal
+    ): void {
+        const totalRevenueDelta = protocolRevenueDelta.plus(supplyRevenueDelta);
+
+        // update market
+        this.market.cumulativeTotalRevenueUSD =
+            this.market.cumulativeTotalRevenueUSD.plus(totalRevenueDelta);
+        this.market.cumulativeProtocolSideRevenueUSD =
+            this.market.cumulativeProtocolSideRevenueUSD.plus(protocolRevenueDelta);
+        this.market.cumulativeSupplySideRevenueUSD =
+            this.market.cumulativeSupplySideRevenueUSD.plus(supplyRevenueDelta);
+        this.saveMarket();
+
+        // update protocol
+        this.protocol.cumulativeTotalRevenueUSD =
+            this.protocol.cumulativeTotalRevenueUSD.plus(totalRevenueDelta);
+        this.protocol.cumulativeProtocolSideRevenueUSD =
+            this.protocol.cumulativeProtocolSideRevenueUSD.plus(protocolRevenueDelta);
+        this.protocol.cumulativeSupplySideRevenueUSD =
+            this.protocol.cumulativeSupplySideRevenueUSD.plus(supplyRevenueDelta);
+        this.protocol.save();
+
+        // update revenue in snapshots
+        this.snapshots.updateRevenue(protocolRevenueDelta, supplyRevenueDelta);
+    }
+
+    //
+    //
+    // this only updates the usage data for the entities changed in this class
+    // (ie, market and protocol)
+    private updateUsageData(transactionType: string, account: Bytes): void {
+        this.market.cumulativeUniqueUsers += activityCounter(
+            account,
+            transactionType,
+            false,
+            0,
+            this.market.id
+        );
+        if (transactionType == TransactionType.DEPOSIT) {
+            this.market.cumulativeUniqueDepositors += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+            this.protocol.cumulativeUniqueDepositors += activityCounter(
+                account,
+                transactionType,
+                true,
+                0
+            );
+        }
+        if (transactionType == TransactionType.BORROW) {
+            this.market.cumulativeUniqueBorrowers += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+            this.protocol.cumulativeUniqueBorrowers += activityCounter(
+                account,
+                transactionType,
+                true,
+                0
+            );
+        }
+        if (transactionType == TransactionType.LIQUIDATOR) {
+            this.market.cumulativeUniqueLiquidators += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+            this.protocol.cumulativeUniqueLiquidators += activityCounter(
+                account,
+                transactionType,
+                true,
+                0
+            );
+        }
+        if (transactionType == TransactionType.LIQUIDATEE) {
+            this.market.cumulativeUniqueLiquidatees += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+            this.protocol.cumulativeUniqueLiquidatees += activityCounter(
+                account,
+                transactionType,
+                true,
+                0
+            );
+        }
+        if (transactionType == TransactionType.TRANSFER)
+            this.market.cumulativeUniqueTransferrers += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+        if (transactionType == TransactionType.FLASHLOAN)
+            this.market.cumulativeUniqueFlashloaners += activityCounter(
+                account,
+                transactionType,
+                true,
+                0,
+                this.market.id
+            );
+
+        this.protocol.save();
+        this.saveMarket();
+
+        // update the snapshots in their respective class
+        this.snapshots.updateUsageData(transactionType, account);
+    }
+
+    //
+    //
+    // this only updates the usage data for the entities changed in this class
+    // (ie, market and protocol)
+    private updateTransactionData(
+        transactionType: string,
+        amount: BigInt,
+        amountUSD: BigDecimal
+    ): void {
+        if (transactionType == TransactionType.DEPOSIT) {
+            this.protocol.depositCount += INT_ONE;
+            this.protocol.cumulativeDepositUSD =
+                this.protocol.cumulativeDepositUSD.plus(amountUSD);
+            this.market.cumulativeDepositUSD =
+                this.market.cumulativeDepositUSD.plus(amountUSD);
+            this.market.depositCount += INT_ONE;
+        } else if (transactionType == TransactionType.WITHDRAW) {
+            this.protocol.withdrawCount += INT_ONE;
+            this.market.withdrawCount += INT_ONE;
+        } else if (transactionType == TransactionType.BORROW) {
+            this.protocol.borrowCount += INT_ONE;
+            this.protocol.cumulativeBorrowUSD =
+                this.protocol.cumulativeBorrowUSD.plus(amountUSD);
+            this.market.cumulativeBorrowUSD =
+                this.market.cumulativeBorrowUSD.plus(amountUSD);
+            this.market.borrowCount += INT_ONE;
+        } else if (transactionType == TransactionType.REPAY) {
+            this.protocol.repayCount += INT_ONE;
+            this.market.repayCount += INT_ONE;
+        } else if (transactionType == TransactionType.LIQUIDATE) {
+            this.protocol.liquidationCount += INT_ONE;
+            this.protocol.cumulativeLiquidateUSD =
+                this.protocol.cumulativeLiquidateUSD.plus(amountUSD);
+            this.market.cumulativeLiquidateUSD =
+                this.market.cumulativeLiquidateUSD.plus(amountUSD);
+            this.market.liquidationCount += INT_ONE;
+        } else if (transactionType == TransactionType.TRANSFER) {
+            this.protocol.transferCount += INT_ONE;
+            this.market.cumulativeTransferUSD =
+                this.market.cumulativeTransferUSD.plus(amountUSD);
+            this.market.transferCount += INT_ONE;
+        } else if (transactionType == TransactionType.FLASHLOAN) {
+            this.protocol.flashloanCount += INT_ONE;
+            this.market.cumulativeFlashloanUSD =
+                this.market.cumulativeFlashloanUSD.plus(amountUSD);
+            this.market.flashloanCount += INT_ONE;
+        } else {
+            log.error("[updateTransactionData] Invalid transaction type: {}", [
+                transactionType,
+            ]);
+            return;
+        }
+        this.protocol.transactionCount += INT_ONE;
+        this.market.transactionCount += INT_ONE;
+
+        this.protocol.save();
+        this.saveMarket();
+
+        // update the snapshots in their respective class
+        this.snapshots.updateTransactionData(transactionType, amount, amountUSD);
+    }
+
+    //
+    //
+    // Insert revenue in RevenueDetail in order (alphabetized)
+    private insertInOrder(
+        details: RevenueDetail,
+        amountUSD: BigDecimal,
+        associatedSource: string
+    ): void {
+        if (details.sources.length == 0) {
+            details.sources = [associatedSource];
+            details.amountsUSD = [amountUSD];
+        } else {
+            let sources = details.sources;
+            let amountsUSD = details.amountsUSD;
+
+            // upsert source and amount
+            if (sources.includes(associatedSource)) {
+                const idx = sources.indexOf(associatedSource);
+                amountsUSD[idx] = amountsUSD[idx].plus(amountUSD);
+
+                details.sources = sources;
+                details.amountsUSD = amountsUSD;
+            } else {
+                sources = insert(sources, associatedSource);
+                amountsUSD = insert(amountsUSD, amountUSD);
+
+                // sort amounts by sources
+                const sourcesSorted = sources.sort();
+                let amountsUSDSorted: BigDecimal[] = [];
+                for (let i = 0; i < sourcesSorted.length; i++) {
+                    const idx = sources.indexOf(sourcesSorted[i]);
+                    amountsUSDSorted = insert(amountsUSDSorted, amountsUSD[idx]);
+                }
+
+                details.sources = sourcesSorted;
+                details.amountsUSD = amountsUSDSorted;
+            }
+        }
+        details.save();
+    }
+
+    //
+    //
+    // Get list of markets in the protocol (or add new market if not in there)
+    private getOrAddMarketToList(marketID: Bytes | null = null): Bytes[] {
+        let markets = _MarketList.load(this.protocol.id);
+        if (!markets) {
+            markets = new _MarketList(this.protocol.id);
+            markets.markets = [];
+        }
+
+        if (!marketID) {
+            return markets.markets;
+        }
+
+        // check if market is already in list
+        if (markets.markets.includes(marketID)) {
+            return markets.markets;
+        }
+
+        // add new market and return
+        const marketList = markets.markets;
+        marketList.push(marketID);
+        markets.markets = marketList;
+        markets.save();
+
+        return marketList;
+    }
 }
