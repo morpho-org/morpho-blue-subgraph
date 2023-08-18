@@ -4,9 +4,9 @@ import { mulDivDown } from "../maths/maths";
 import { BIGINT_WAD } from "../sdk/constants";
 
 const MAX_LIQUIDATION_INCENTIVE_FACTOR = BigInt.fromString(
-  "1150000000000000000"
+  "1150000000000000000" // 1.15
 );
-const LIQUIDATION_CURSOR = BigInt.fromString("300000000000000000");
+const LIQUIDATION_CURSOR = BigInt.fromString("300000000000000000"); // 0.3
 
 export function getLiquidationIncentiveFactor(lltv: BigInt): BigInt {
   const val = mulDivDown(

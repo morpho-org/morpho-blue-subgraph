@@ -9,7 +9,7 @@ import {
 
 import { CreateMarketMarketStruct } from "../../generated/MorphoBlue/MorphoBlue";
 import { Market, Oracle } from "../../generated/schema";
-import { BIGDECIMAL_WAD, INT_ZERO } from "../sdk/constants";
+import { BIGDECIMAL_ONE, BIGDECIMAL_WAD, INT_ZERO } from "../sdk/constants";
 import { TokenManager } from "../sdk/token";
 import { getLiquidationIncentiveFactor } from "../utils/liquidationIncentives";
 
@@ -49,6 +49,7 @@ export function createMarket(
     ? getLiquidationIncentiveFactor(marketStruct.lltv)
         .toBigDecimal()
         .div(BIGDECIMAL_WAD)
+        .minus(BIGDECIMAL_ONE)
     : BigDecimal.zero();
 
   market.canIsolate = true;
