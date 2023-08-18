@@ -16,7 +16,6 @@ import {
 import { getProtocol } from "../initializers/protocol";
 
 import {
-  BIGINT_ZERO,
   exponentToBigDecimal,
   INT_ONE,
   INT_ZERO,
@@ -258,7 +257,7 @@ export class PositionManager {
     }
     position.save();
 
-    const closePosition = position.balance == BIGINT_ZERO;
+    const closePosition = position.balance == BigInt.zero();
     if (closePosition) {
       //
       // update position counter
@@ -361,8 +360,8 @@ export class PositionManager {
   }
 
   private _checkPositionConsistency(
-    positionSide: PositionSide,
-    transactionType: TransactionType
+    positionSide: string,
+    transactionType: string
   ): null {
     if (
       positionSide === PositionSide.COLLATERAL &&
@@ -403,5 +402,6 @@ export class PositionManager {
       );
       return null;
     }
+    return null;
   }
 }

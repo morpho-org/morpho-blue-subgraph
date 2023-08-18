@@ -9,7 +9,7 @@ import {
 
 import { CreateMarketMarketStruct } from "../../generated/MorphoBlue/MorphoBlue";
 import { Market, Oracle } from "../../generated/schema";
-import { BIGDECIMAL_WAD, BIGDECIMAL_ZERO, INT_ZERO } from "../sdk/constants";
+import { BIGDECIMAL_WAD, INT_ZERO } from "../sdk/constants";
 import { TokenManager } from "../sdk/token";
 
 import { getProtocol } from "./protocol";
@@ -44,7 +44,7 @@ export function createMarket(
     : BigDecimal.zero();
   market.maximumLTV = lltvBD;
   market.liquidationThreshold = lltvBD;
-  market.liquidationPenalty = BIGDECIMAL_ZERO; // TODO: to define
+  market.liquidationPenalty = BigDecimal.zero(); // TODO: to define
 
   market.canIsolate = true;
   market.createdTimestamp = event.block.timestamp;

@@ -11,7 +11,7 @@ import { ERC20NameBytes } from "../../generated/MorphoBlue/ERC20NameBytes";
 import { ERC20SymbolBytes } from "../../generated/MorphoBlue/ERC20SymbolBytes";
 import { Token } from "../../generated/schema";
 
-import { BIGDECIMAL_ZERO, exponentToBigDecimal } from "./constants";
+import { exponentToBigDecimal } from "./constants";
 
 /**
  * This file contains the TokenClass, which acts as
@@ -77,7 +77,7 @@ export class TokenManager {
     if (this.token.lastPriceUSD) {
       return this.token.lastPriceUSD!;
     }
-    return BIGDECIMAL_ZERO;
+    return BigDecimal.zero();
   }
 
   // convert token amount to USD value
