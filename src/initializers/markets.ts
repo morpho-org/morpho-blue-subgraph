@@ -1,4 +1,4 @@
-import {BigDecimal, BigInt, Bytes, ethereum, log} from "@graphprotocol/graph-ts";
+import {Address, BigDecimal, BigInt, Bytes, ethereum, log} from "@graphprotocol/graph-ts";
 import {CreateMarketMarketStruct} from "../../generated/MorphoBlue/MorphoBlue";
 import {Market, Oracle, RevenueDetail} from "../../generated/schema";
 import {getProtocol} from "./protocol";
@@ -6,11 +6,12 @@ import {TokenManager} from "../sdk/token";
 import {BIGDECIMAL_WAD, BIGDECIMAL_ZERO, INT_ZERO} from "../sdk/constants";
 
 
-export function createMarket(id: Bytes, marketStruct: CreateMarketMarketStruct, event: ethereum.Event): Market {
+export function createMarket(id: Bytes, marketStruct: CreateMarketMarketStruct | null, event: ethereum.Event): Market {
     const market = new Market(id);
 
-    const collateralToken = new TokenManager(marketStruct.collateralToken, event);
-    const borrowableToken = new TokenManager(marketStruct.borrowableToken, event);
+
+    const collateralToken = new TokenManager(marketStruct ? marketStruct.collateralToken : Address.zero(), event);
+    const borrowableToken = new TokenManager(marketStruct ? marketStruct.borrowableToken : Address.zero(), event);
 
     market.protocol = getProtocol().id;
     market.name = borrowableToken.getToken().symbol + " / " + collateralToken.getToken().symbol;
@@ -18,7 +19,7 @@ export function createMarket(id: Bytes, marketStruct: CreateMarketMarketStruct, 
     market.canBorrowFrom = true;
     market.canUseAsCollateral = true;
 
-    const lltvBD = marketStruct.lltv.toBigDecimal().div(BIGDECIMAL_WAD)
+    const lltvBD = marketStruct ? marketStruct.lltv.toBigDecimal().div(BIGDECIMAL_WAD) : BigDecimal.zero();
     market.maximumLTV = lltvBD;
     market.liquidationThreshold = lltvBD;
     market.liquidationPenalty = BIGDECIMAL_ZERO; // TODO: to define
@@ -83,23 +84,36 @@ export function createMarket(id: Bytes, marketStruct: CreateMarketMarketStruct, 
     market.fee = BigInt.zero();
 
     market.save();
+    if(marketStruct) {
+        const oracle = new Oracle(market.id.concat(marketStruct!.oracle))
+        oracle.market = market.id;
+        oracle.oracleAddress = marketStruct!.oracle;
+        oracle.blockCreated = event.block.number;
+        oracle.timestampCreated = event.block.timestamp;
+        oracle.isActive = true;
+        const isUsd = !!borrowableToken.getToken().symbol.includes("USD")
+        oracle.isUSD = isUsd;
+        // TODO: whitelist oracleSource for a list of oracles.
+        oracle.save();
 
-    const oracle = new Oracle(market.id.concat(marketStruct.oracle))
-    oracle.market = market.id;
-    oracle.oracleAddress = marketStruct.oracle;
-    oracle.blockCreated = event.block.number;
-    oracle.timestampCreated = event.block.timestamp;
-    oracle.isActive = true;
-    const isUsd = !!borrowableToken.getToken().symbol.includes("USD")
-    oracle.isUSD = isUsd;
-    // TODO: whitelist oracleSource for a list of oracles.
-    oracle.save();
-
-    // TODO: fix this workaround of the relation between oracle & market.
-    market.oracle = oracle.id;
-    market.save();
+        // TODO: fix this workaround of the relation between oracle & market.
+        market.oracle = oracle.id;
+        market.save();
+    }
 
     return market;
+}
+
+/**
+ * Market used to match the Messari framework when an action is not related to a specific market.
+ * For example, on blue, a flash loan is not linked to a specific market, but rather to a token.
+ */
+export function getZeroMarket(event: ethereum.Event): Market {
+    const market = Market.load(Address.zero());
+    if (!market) {
+        return createMarket(Address.zero(), null, event);
+    }
+    return market!;
 }
 
 export function getMarket(id: Bytes): Market {

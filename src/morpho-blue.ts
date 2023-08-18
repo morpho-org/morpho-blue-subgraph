@@ -20,7 +20,7 @@ import {
   WithdrawCollateral
 } from "../generated/MorphoBlue/MorphoBlue"
 import {getProtocol} from "./initializers/protocol";
-import {createMarket, getMarket} from "./initializers/markets";
+import {createMarket, getMarket, getZeroMarket} from "./initializers/markets";
 import {DataManager} from "./sdk/manager";
 import {TokenManager} from "./sdk/token";
 import {AccountManager} from "./sdk/account";
@@ -92,7 +92,18 @@ export function handleEnableLltv(event: EnableLltv): void {
 }
 
 export function handleFlashLoan(event: FlashLoan): void {
+    const market = getZeroMarket(event);
+    const manager = new DataManager(market.id, event);
 
+    const token = new TokenManager(event.params.token, event);
+
+    const amountUsd = token.getAmountUSD(event.params.assets);
+    manager.createFlashloan(
+        event.params.token,
+        event.params.caller,
+        event.params.assets,
+        amountUsd
+    )
 }
 
 export function handleIncrementNonce(event: IncrementNonce): void {
