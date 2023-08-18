@@ -1,0 +1,14 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": ["plugin:prettier/recommended"],
+  "plugins": ["@typescript-eslint", "unused-imports", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2016,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": "error",
+    "unused-imports/no-unused-imports": "error"
+  },
+  "ignorePatterns": ["node_modules/", "build/", "generated/"]
+}
