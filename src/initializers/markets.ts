@@ -80,6 +80,7 @@ export function createMarket(id: Bytes, marketStruct: CreateMarketMarketStruct, 
     market.totalSupply = BigInt.zero();
     market.totalBorrow = BigInt.zero();
     market.accruedInterests = BigInt.zero();
+    market.fee = BigInt.zero();
 
     market.save();
 

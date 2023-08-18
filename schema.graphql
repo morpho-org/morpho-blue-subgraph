@@ -651,9 +651,6 @@ type FinancialsDailySnapshot @entity @dailySnapshot {
   " Current TVL (Total Value Locked) of the entire protocol "
   totalValueLockedUSD: BigDecimal!
 
-  " Current PCV (Protocol Controlled Value). Only relevant for protocols with PCV. "
-  protocolControlledValueUSD: BigDecimal
-
   " Total supply of minted tokens in native amounts, with same ordering as mintedTokens. Only applies to CDP "
   mintedTokenSupplies: [BigInt!]
 
@@ -792,7 +789,7 @@ type Market @entity @regularPolling {
   reserveFactor: BigDecimal
 
   " The token that can be borrowed (e.g. inputToken in POOLED and generally a stable in CDPs) "
-  borrowedToken: Token
+  borrowedToken: Token!
 
   " Amount of input tokens borrowed in this market using variable interest rates (in native terms) "
   variableBorrowedTokenBalance: BigInt
@@ -951,6 +948,7 @@ type Market @entity @regularPolling {
   totalBorrow: BigInt!
 
   accruedInterests: BigInt!
+  fee: BigInt!
 
 }
 
@@ -1461,10 +1459,9 @@ type Position @entity @regularPolling {
   " Position daily snapshots for open positions "
   snapshots: [PositionSnapshot!]! @derivedFrom(field: "position")
 
-  ##### Add Ons #####
+  ##### Addons #####
 
-  " efficient mode flag "
-  _eMode: Boolean
+  shares: BigInt
 }
 
 # Unlike other snapshots that are taken at a fixed time interval. Position
@@ -1632,6 +1629,10 @@ type Deposit implements Event @entity(immutable: true) @transaction {
 
   " Amount of token deposited in USD "
   amountUSD: BigDecimal!
+
+  ##### Add Ons #####
+
+  isCollateral: Boolean!
 }
 
 type Withdraw implements Event @entity(immutable: true) @transaction {
@@ -1686,6 +1687,11 @@ type Withdraw implements Event @entity(immutable: true) @transaction {
 
   " Amount of token withdrawn in USD "
   amountUSD: BigDecimal!
+
+
+  ##### Add Ons #####
+
+  isCollateral: Boolean!
 }
 
 # For CDPs, use this for mint events
