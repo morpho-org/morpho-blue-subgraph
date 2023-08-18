@@ -78,6 +78,7 @@ export type InterestRateType = string;
 
 export namespace InterestRateSide {
     export const LENDER = "LENDER";
+    export const SUPPLIER = "SUPPLIER";
     export const BORROWER = "BORROWER";
 }
 
@@ -108,6 +109,8 @@ export namespace OracleSource {
 }
 
 export namespace TransactionType {
+    export const DEPOSIT_COLLATERAL = "DEPOSIT_COLLATERAL";
+    export const WITHDRAW_COLLATERAL = "WITHDRAW_COLLATERAL";
     export const DEPOSIT = "DEPOSIT";
     export const WITHDRAW = "WITHDRAW";
     export const BORROW = "BORROW";
@@ -169,7 +172,8 @@ export const BIGINT_ZERO = BigInt.fromI32(0);
 export const BIGINT_ONE = BigInt.fromI32(1);
 export const BIGINT_HUNDRED = BigInt.fromI32(100);
 export const BIGINT_THREE_HUNDRED = BigInt.fromI32(300);
-export const BIGINT_TEN_TO_EIGHTEENTH = BigInt.fromString("10").pow(18);
+export const BIGINT_WAD = BigInt.fromString("10").pow(18);
+
 
 export const BIGDECIMAL_ZERO = new BigDecimal(BIGINT_ZERO);
 export const BIGDECIMAL_ONE = new BigDecimal(BIGINT_ONE);
@@ -192,15 +196,6 @@ export const FANTOM_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 1; // 1 = seconds per b
 export const BSC_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 3; // 3 = seconds per block
 export const MATIC_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 2; // 2 = seconds per block
 export const ARBITRUM_BLOCKS_PER_YEAR = SECONDS_PER_YEAR / 1; // 1 = seconds per block.
-
-/////////////////////////////
-/////        Math       /////
-/////////////////////////////
-
-export const mantissaFactor = 18;
-export const cTokenDecimals = 8;
-export const mantissaFactorBD = exponentToBigDecimal(mantissaFactor);
-export const cTokenDecimalsBD = exponentToBigDecimal(cTokenDecimals);
 
 // n => 10^n
 export function exponentToBigDecimal(decimals: i32): BigDecimal {
@@ -298,9 +293,3 @@ export function activityCounter(
 
     return INT_ZERO;
 }
-
-/////////////////////////////
-/////     Addresses     /////
-/////////////////////////////
-
-export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
