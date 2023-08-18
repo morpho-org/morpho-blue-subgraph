@@ -1,6 +1,5 @@
 import {BigInt, log} from "@graphprotocol/graph-ts"
 import {
-  MorphoBlue,
   AccrueInterests,
   Borrow,
   CreateMarket,
@@ -116,6 +115,34 @@ export function handleLiquidate(event: Liquidate): void {
 
     market.totalCollateral = market.totalCollateral.minus(event.params.seized);
     market.save();
+
+
+    const token = new TokenManager(market.borrowedToken, event);
+
+    const account = new AccountManager(event.params.borrower).getAccount();
+
+    const position = new PositionManager(account, market, PositionSide.BORROWER);
+
+    // The current position must be defined for a Repay
+    const currentPosition = Position.load(position.getPositionID()!)!;
+    const initialShares = currentPosition.shares!;
+    const userShares = initialShares.minus(event.params.repaidShares);
+    const newBalance = toAssetsUp(userShares, market.totalBorrowShares, market.totalBorrow);
+
+    position.subtractPosition(event, newBalance, userShares, TransactionType.LIQUIDATE, token.getPriceUSD());
+
+
+    const collateralToken = new TokenManager(market.borrowedToken, event);
+
+    const collateralPosition = new PositionManager(account, market, PositionSide.COLLATERAL);
+
+    const currentCollateralPosition = Position.load(position.getPositionID()!)!;
+    const initialCollateral = currentCollateralPosition.balance
+
+    const newCollateral = initialCollateral.minus(event.params.seized);
+
+    collateralPosition.subtractPosition(event, newCollateral, BigInt.zero(), TransactionType.WITHDRAW_COLLATERAL, collateralToken.getPriceUSD());
+
 }
 
 export function handleRepay(event: Repay): void {
