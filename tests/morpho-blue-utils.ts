@@ -1,5 +1,7 @@
-import { newMockEvent } from "matchstick-as"
-import { ethereum, Bytes, BigInt, Address } from "@graphprotocol/graph-ts"
+import { newMockEvent } from "matchstick-as";
+
+import { ethereum, Bytes, BigInt, Address } from "@graphprotocol/graph-ts";
+
 import {
   AccrueInterests,
   Borrow,
@@ -17,8 +19,8 @@ import {
   Supply,
   SupplyCollateral,
   Withdraw,
-  WithdrawCollateral
-} from "../generated/MorphoBlue/MorphoBlue"
+  WithdrawCollateral,
+} from "../generated/MorphoBlue/MorphoBlue";
 
 export function createAccrueInterestsEvent(
   id: Bytes,
@@ -26,33 +28,33 @@ export function createAccrueInterestsEvent(
   accruedInterests: BigInt,
   feeShares: BigInt
 ): AccrueInterests {
-  let accrueInterestsEvent = changetype<AccrueInterests>(newMockEvent())
+  let accrueInterestsEvent = changetype<AccrueInterests>(newMockEvent());
 
-  accrueInterestsEvent.parameters = new Array()
+  accrueInterestsEvent.parameters = new Array();
 
   accrueInterestsEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   accrueInterestsEvent.parameters.push(
     new ethereum.EventParam(
       "prevBorrowRate",
       ethereum.Value.fromUnsignedBigInt(prevBorrowRate)
     )
-  )
+  );
   accrueInterestsEvent.parameters.push(
     new ethereum.EventParam(
       "accruedInterests",
       ethereum.Value.fromUnsignedBigInt(accruedInterests)
     )
-  )
+  );
   accrueInterestsEvent.parameters.push(
     new ethereum.EventParam(
       "feeShares",
       ethereum.Value.fromUnsignedBigInt(feeShares)
     )
-  )
+  );
 
-  return accrueInterestsEvent
+  return accrueInterestsEvent;
 }
 
 export function createBorrowEvent(
@@ -63,72 +65,72 @@ export function createBorrowEvent(
   assets: BigInt,
   shares: BigInt
 ): Borrow {
-  let borrowEvent = changetype<Borrow>(newMockEvent())
+  let borrowEvent = changetype<Borrow>(newMockEvent());
 
-  borrowEvent.parameters = new Array()
+  borrowEvent.parameters = new Array();
 
   borrowEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   borrowEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   borrowEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   borrowEvent.parameters.push(
     new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver))
-  )
+  );
   borrowEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
   borrowEvent.parameters.push(
     new ethereum.EventParam("shares", ethereum.Value.fromUnsignedBigInt(shares))
-  )
+  );
 
-  return borrowEvent
+  return borrowEvent;
 }
 
 export function createCreateMarketEvent(
   id: Bytes,
   market: ethereum.Tuple
 ): CreateMarket {
-  let createMarketEvent = changetype<CreateMarket>(newMockEvent())
+  let createMarketEvent = changetype<CreateMarket>(newMockEvent());
 
-  createMarketEvent.parameters = new Array()
+  createMarketEvent.parameters = new Array();
 
   createMarketEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   createMarketEvent.parameters.push(
     new ethereum.EventParam("market", ethereum.Value.fromTuple(market))
-  )
+  );
 
-  return createMarketEvent
+  return createMarketEvent;
 }
 
 export function createEnableIrmEvent(irm: Address): EnableIrm {
-  let enableIrmEvent = changetype<EnableIrm>(newMockEvent())
+  let enableIrmEvent = changetype<EnableIrm>(newMockEvent());
 
-  enableIrmEvent.parameters = new Array()
+  enableIrmEvent.parameters = new Array();
 
   enableIrmEvent.parameters.push(
     new ethereum.EventParam("irm", ethereum.Value.fromAddress(irm))
-  )
+  );
 
-  return enableIrmEvent
+  return enableIrmEvent;
 }
 
 export function createEnableLltvEvent(lltv: BigInt): EnableLltv {
-  let enableLltvEvent = changetype<EnableLltv>(newMockEvent())
+  let enableLltvEvent = changetype<EnableLltv>(newMockEvent());
 
-  enableLltvEvent.parameters = new Array()
+  enableLltvEvent.parameters = new Array();
 
   enableLltvEvent.parameters.push(
     new ethereum.EventParam("lltv", ethereum.Value.fromUnsignedBigInt(lltv))
-  )
+  );
 
-  return enableLltvEvent
+  return enableLltvEvent;
 }
 
 export function createFlashLoanEvent(
@@ -136,21 +138,21 @@ export function createFlashLoanEvent(
   token: Address,
   assets: BigInt
 ): FlashLoan {
-  let flashLoanEvent = changetype<FlashLoan>(newMockEvent())
+  let flashLoanEvent = changetype<FlashLoan>(newMockEvent());
 
-  flashLoanEvent.parameters = new Array()
+  flashLoanEvent.parameters = new Array();
 
   flashLoanEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   flashLoanEvent.parameters.push(
     new ethereum.EventParam("token", ethereum.Value.fromAddress(token))
-  )
+  );
   flashLoanEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
 
-  return flashLoanEvent
+  return flashLoanEvent;
 }
 
 export function createIncrementNonceEvent(
@@ -158,27 +160,27 @@ export function createIncrementNonceEvent(
   authorizer: Address,
   usedNonce: BigInt
 ): IncrementNonce {
-  let incrementNonceEvent = changetype<IncrementNonce>(newMockEvent())
+  let incrementNonceEvent = changetype<IncrementNonce>(newMockEvent());
 
-  incrementNonceEvent.parameters = new Array()
+  incrementNonceEvent.parameters = new Array();
 
   incrementNonceEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   incrementNonceEvent.parameters.push(
     new ethereum.EventParam(
       "authorizer",
       ethereum.Value.fromAddress(authorizer)
     )
-  )
+  );
   incrementNonceEvent.parameters.push(
     new ethereum.EventParam(
       "usedNonce",
       ethereum.Value.fromUnsignedBigInt(usedNonce)
     )
-  )
+  );
 
-  return incrementNonceEvent
+  return incrementNonceEvent;
 }
 
 export function createLiquidateEvent(
@@ -190,39 +192,39 @@ export function createLiquidateEvent(
   seized: BigInt,
   badDebtShares: BigInt
 ): Liquidate {
-  let liquidateEvent = changetype<Liquidate>(newMockEvent())
+  let liquidateEvent = changetype<Liquidate>(newMockEvent());
 
-  liquidateEvent.parameters = new Array()
+  liquidateEvent.parameters = new Array();
 
   liquidateEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam("borrower", ethereum.Value.fromAddress(borrower))
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam("repaid", ethereum.Value.fromUnsignedBigInt(repaid))
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam(
       "repaidShares",
       ethereum.Value.fromUnsignedBigInt(repaidShares)
     )
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam("seized", ethereum.Value.fromUnsignedBigInt(seized))
-  )
+  );
   liquidateEvent.parameters.push(
     new ethereum.EventParam(
       "badDebtShares",
       ethereum.Value.fromUnsignedBigInt(badDebtShares)
     )
-  )
+  );
 
-  return liquidateEvent
+  return liquidateEvent;
 }
 
 export function createRepayEvent(
@@ -232,27 +234,27 @@ export function createRepayEvent(
   assets: BigInt,
   shares: BigInt
 ): Repay {
-  let repayEvent = changetype<Repay>(newMockEvent())
+  let repayEvent = changetype<Repay>(newMockEvent());
 
-  repayEvent.parameters = new Array()
+  repayEvent.parameters = new Array();
 
   repayEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   repayEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   repayEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   repayEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
   repayEvent.parameters.push(
     new ethereum.EventParam("shares", ethereum.Value.fromUnsignedBigInt(shares))
-  )
+  );
 
-  return repayEvent
+  return repayEvent;
 }
 
 export function createSetAuthorizationEvent(
@@ -261,77 +263,77 @@ export function createSetAuthorizationEvent(
   authorized: Address,
   newIsAuthorized: boolean
 ): SetAuthorization {
-  let setAuthorizationEvent = changetype<SetAuthorization>(newMockEvent())
+  let setAuthorizationEvent = changetype<SetAuthorization>(newMockEvent());
 
-  setAuthorizationEvent.parameters = new Array()
+  setAuthorizationEvent.parameters = new Array();
 
   setAuthorizationEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   setAuthorizationEvent.parameters.push(
     new ethereum.EventParam(
       "authorizer",
       ethereum.Value.fromAddress(authorizer)
     )
-  )
+  );
   setAuthorizationEvent.parameters.push(
     new ethereum.EventParam(
       "authorized",
       ethereum.Value.fromAddress(authorized)
     )
-  )
+  );
   setAuthorizationEvent.parameters.push(
     new ethereum.EventParam(
       "newIsAuthorized",
       ethereum.Value.fromBoolean(newIsAuthorized)
     )
-  )
+  );
 
-  return setAuthorizationEvent
+  return setAuthorizationEvent;
 }
 
 export function createSetFeeEvent(id: Bytes, fee: BigInt): SetFee {
-  let setFeeEvent = changetype<SetFee>(newMockEvent())
+  let setFeeEvent = changetype<SetFee>(newMockEvent());
 
-  setFeeEvent.parameters = new Array()
+  setFeeEvent.parameters = new Array();
 
   setFeeEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   setFeeEvent.parameters.push(
     new ethereum.EventParam("fee", ethereum.Value.fromUnsignedBigInt(fee))
-  )
+  );
 
-  return setFeeEvent
+  return setFeeEvent;
 }
 
 export function createSetFeeRecipientEvent(
   feeRecipient: Address
 ): SetFeeRecipient {
-  let setFeeRecipientEvent = changetype<SetFeeRecipient>(newMockEvent())
+  let setFeeRecipientEvent = changetype<SetFeeRecipient>(newMockEvent());
 
-  setFeeRecipientEvent.parameters = new Array()
+  setFeeRecipientEvent.parameters = new Array();
 
   setFeeRecipientEvent.parameters.push(
     new ethereum.EventParam(
       "feeRecipient",
       ethereum.Value.fromAddress(feeRecipient)
     )
-  )
+  );
 
-  return setFeeRecipientEvent
+  return setFeeRecipientEvent;
 }
 
 export function createSetOwnerEvent(newOwner: Address): SetOwner {
-  let setOwnerEvent = changetype<SetOwner>(newMockEvent())
+  let setOwnerEvent = changetype<SetOwner>(newMockEvent());
 
-  setOwnerEvent.parameters = new Array()
+  setOwnerEvent.parameters = new Array();
 
   setOwnerEvent.parameters.push(
     new ethereum.EventParam("newOwner", ethereum.Value.fromAddress(newOwner))
-  )
+  );
 
-  return setOwnerEvent
+  return setOwnerEvent;
 }
 
 export function createSupplyEvent(
@@ -341,27 +343,27 @@ export function createSupplyEvent(
   assets: BigInt,
   shares: BigInt
 ): Supply {
-  let supplyEvent = changetype<Supply>(newMockEvent())
+  let supplyEvent = changetype<Supply>(newMockEvent());
 
-  supplyEvent.parameters = new Array()
+  supplyEvent.parameters = new Array();
 
   supplyEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   supplyEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   supplyEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   supplyEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
   supplyEvent.parameters.push(
     new ethereum.EventParam("shares", ethereum.Value.fromUnsignedBigInt(shares))
-  )
+  );
 
-  return supplyEvent
+  return supplyEvent;
 }
 
 export function createSupplyCollateralEvent(
@@ -370,24 +372,24 @@ export function createSupplyCollateralEvent(
   onBehalf: Address,
   assets: BigInt
 ): SupplyCollateral {
-  let supplyCollateralEvent = changetype<SupplyCollateral>(newMockEvent())
+  let supplyCollateralEvent = changetype<SupplyCollateral>(newMockEvent());
 
-  supplyCollateralEvent.parameters = new Array()
+  supplyCollateralEvent.parameters = new Array();
 
   supplyCollateralEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   supplyCollateralEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   supplyCollateralEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   supplyCollateralEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
 
-  return supplyCollateralEvent
+  return supplyCollateralEvent;
 }
 
 export function createWithdrawEvent(
@@ -398,30 +400,30 @@ export function createWithdrawEvent(
   assets: BigInt,
   shares: BigInt
 ): Withdraw {
-  let withdrawEvent = changetype<Withdraw>(newMockEvent())
+  let withdrawEvent = changetype<Withdraw>(newMockEvent());
 
-  withdrawEvent.parameters = new Array()
+  withdrawEvent.parameters = new Array();
 
   withdrawEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   withdrawEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   withdrawEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   withdrawEvent.parameters.push(
     new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver))
-  )
+  );
   withdrawEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
   withdrawEvent.parameters.push(
     new ethereum.EventParam("shares", ethereum.Value.fromUnsignedBigInt(shares))
-  )
+  );
 
-  return withdrawEvent
+  return withdrawEvent;
 }
 
 export function createWithdrawCollateralEvent(
@@ -431,25 +433,25 @@ export function createWithdrawCollateralEvent(
   receiver: Address,
   assets: BigInt
 ): WithdrawCollateral {
-  let withdrawCollateralEvent = changetype<WithdrawCollateral>(newMockEvent())
+  let withdrawCollateralEvent = changetype<WithdrawCollateral>(newMockEvent());
 
-  withdrawCollateralEvent.parameters = new Array()
+  withdrawCollateralEvent.parameters = new Array();
 
   withdrawCollateralEvent.parameters.push(
     new ethereum.EventParam("id", ethereum.Value.fromFixedBytes(id))
-  )
+  );
   withdrawCollateralEvent.parameters.push(
     new ethereum.EventParam("caller", ethereum.Value.fromAddress(caller))
-  )
+  );
   withdrawCollateralEvent.parameters.push(
     new ethereum.EventParam("onBehalf", ethereum.Value.fromAddress(onBehalf))
-  )
+  );
   withdrawCollateralEvent.parameters.push(
     new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver))
-  )
+  );
   withdrawCollateralEvent.parameters.push(
     new ethereum.EventParam("assets", ethereum.Value.fromUnsignedBigInt(assets))
-  )
+  );
 
-  return withdrawCollateralEvent
+  return withdrawCollateralEvent;
 }

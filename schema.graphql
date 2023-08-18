@@ -327,11 +327,11 @@ interface Protocol {
 
   " Daily usage metrics for this protocol "
   dailyUsageMetrics: [UsageMetricsDailySnapshot!]!
-  @derivedFrom(field: "protocol")
+    @derivedFrom(field: "protocol")
 
   " Hourly usage metrics for this protocol "
   hourlyUsageMetrics: [UsageMetricsHourlySnapshot!]!
-  @derivedFrom(field: "protocol")
+    @derivedFrom(field: "protocol")
 
   " Daily financial metrics for this protocol "
   financialMetrics: [FinancialsDailySnapshot!]! @derivedFrom(field: "protocol")
@@ -470,11 +470,11 @@ type LendingProtocol implements Protocol @entity @regularPolling {
 
   " Daily usage metrics for this protocol "
   dailyUsageMetrics: [UsageMetricsDailySnapshot!]!
-  @derivedFrom(field: "protocol")
+    @derivedFrom(field: "protocol")
 
   " Hourly usage metrics for this protocol "
   hourlyUsageMetrics: [UsageMetricsHourlySnapshot!]!
-  @derivedFrom(field: "protocol")
+    @derivedFrom(field: "protocol")
 
   " Daily financial metrics for this protocol "
   financialMetrics: [FinancialsDailySnapshot!]! @derivedFrom(field: "protocol")
@@ -949,7 +949,6 @@ type Market @entity @regularPolling {
 
   accruedInterests: BigInt!
   fee: BigInt!
-
 }
 
 #################################
@@ -1687,7 +1686,6 @@ type Withdraw implements Event @entity(immutable: true) @transaction {
 
   " Amount of token withdrawn in USD "
   amountUSD: BigDecimal!
-
 
   ##### Add Ons #####
 
