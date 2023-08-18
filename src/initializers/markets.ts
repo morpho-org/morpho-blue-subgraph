@@ -8,8 +8,14 @@ import {
 } from "@graphprotocol/graph-ts";
 
 import { CreateMarketMarketStruct } from "../../generated/MorphoBlue/MorphoBlue";
-import { Market, Oracle } from "../../generated/schema";
-import { BIGDECIMAL_ONE, BIGDECIMAL_WAD, INT_ZERO } from "../sdk/constants";
+import { _MarketList, Market, Oracle } from "../../generated/schema";
+import {
+  BIGDECIMAL_ONE,
+  BIGDECIMAL_WAD,
+  insert,
+  INT_ONE,
+  INT_ZERO,
+} from "../sdk/constants";
 import { TokenManager } from "../sdk/token";
 import { getLiquidationIncentiveFactor } from "../utils/liquidationIncentives";
 
@@ -129,6 +135,13 @@ export function createMarket(
     market.save();
   }
 
+  const protocol = getProtocol();
+  protocol.totalPoolCount += INT_ONE;
+  protocol.save();
+
+  const marketList = _MarketList.load(protocol.id)!;
+  marketList.markets = insert<Bytes>(marketList.markets, market.id);
+  marketList.save();
   return market;
 }
 

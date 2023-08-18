@@ -61,7 +61,7 @@ export function handleBorrow(event: Borrow): void {
   let initialShares = BigInt.zero();
   if (position.getPositionID() !== null) {
     const currentPosition = Position.load(position.getPositionID()!)!;
-    initialShares = currentPosition.shares;
+    initialShares = currentPosition.shares!;
   }
   const userShares = initialShares.plus(event.params.shares);
   const newBalance = toAssetsUp(
@@ -247,7 +247,7 @@ export function handleSupply(event: Supply): void {
   let initialShares = BigInt.zero();
   if (position.getPositionID() !== null) {
     const currentPosition = Position.load(position.getPositionID()!)!;
-    initialShares = currentPosition.shares;
+    initialShares = currentPosition.shares!;
   }
   const userShares = initialShares.plus(event.params.shares);
   // TODO: check if we have to substract the user shares/assets to the total?
@@ -316,7 +316,7 @@ export function handleWithdraw(event: Withdraw): void {
   let initialShares = BigInt.zero();
   if (position.getPositionID() !== null) {
     const currentPosition = Position.load(position.getPositionID()!)!;
-    initialShares = currentPosition.shares;
+    initialShares = currentPosition.shares!;
   }
   const userShares = initialShares.minus(event.params.shares);
   // TODO: check if we have to substract the user shares/assets to the total?
