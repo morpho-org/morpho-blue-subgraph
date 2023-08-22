@@ -25,7 +25,7 @@ import { createMarket, getMarket, getZeroMarket } from "./initializers/markets";
 import { getProtocol } from "./initializers/protocol";
 import { toAssetsDown, toAssetsUp } from "./maths/shares";
 import { AccountManager } from "./sdk/account";
-import { PositionSide, TransactionType } from "./sdk/constants";
+import { BIGDECIMAL_WAD, PositionSide, TransactionType } from "./sdk/constants";
 import { DataManager } from "./sdk/manager";
 import { PositionManager } from "./sdk/position";
 import { TokenManager } from "./sdk/token";
@@ -40,8 +40,28 @@ export function handleAccrueInterests(event: AccrueInterests): void {
   market.totalSupplyShares = market.totalSupplyShares.plus(
     event.params.feeShares
   );
+  if (event.params.feeShares.gt(BigInt.zero())) {
+    // We heck the consistency of the fee data
+    // TODO: do we want to register theses invariants somewhere instead of throwing?
+    if (market.fee.isZero()) {
+      log.critical("Inconsistent fee data for market {}", [
+        market.id.toHexString(),
+      ]);
+    }
+
+    const inputToken = new TokenManager(market.borrowedToken, event);
+
+    const feeAmount = toAssetsUp(
+      event.params.feeShares,
+      market.totalSupplyShares,
+      market.totalSupply
+    );
+    // TODO: manage fees here
+  }
+
   market.save();
-  // TODO: handle the fee
+
+  const dataManager = new DataManager(market.id, event);
 
   // TODO: update protocol & market metrics
 }
@@ -217,6 +237,7 @@ export function handleSetAuthorization(event: SetAuthorization): void {}
 export function handleSetFee(event: SetFee): void {
   const market = getMarket(event.params.id);
   market.fee = event.params.fee;
+  market.reserveFactor = event.params.fee.toBigDecimal().div(BIGDECIMAL_WAD);
   market.save();
 }
 
@@ -319,7 +340,7 @@ export function handleWithdraw(event: Withdraw): void {
     initialShares = currentPosition.shares!;
   }
   const userShares = initialShares.minus(event.params.shares);
-  // TODO: check if we have to substract the user shares/assets to the total?
+  // TODO: check if we have to subtract the user shares/assets to the total?
   const newBalance = toAssetsDown(
     userShares,
     market.totalSupplyShares,
@@ -350,11 +371,9 @@ export function handleWithdrawCollateral(event: WithdrawCollateral): void {
     PositionSide.COLLATERAL
   );
 
-  let initialCollateral = BigInt.zero();
-  if (position.getPositionID() !== null) {
-    const currentPosition = Position.load(position.getPositionID()!)!;
-    initialCollateral = currentPosition.balance;
-  }
+  const currentPosition = Position.load(position.getPositionID()!)!;
+  const initialCollateral = currentPosition.balance;
+
   const newBalance = initialCollateral.minus(event.params.assets);
 
   position.subtractPosition(

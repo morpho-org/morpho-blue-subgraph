@@ -147,7 +147,7 @@ export function createMarket(
 
 /**
  * Market used to match the Messari framework when an action is not related to a specific market.
- * For example, on blue, a flash loan is not linked to a specific market, but rather to a token.
+ * For example, on Morpho Blue, a flash loan is not linked to a specific market, but rather to a token.
  */
 export function getZeroMarket(event: ethereum.Event): Market {
   const market = Market.load(Address.zero());

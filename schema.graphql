@@ -651,9 +651,6 @@ type FinancialsDailySnapshot @entity @dailySnapshot {
   " Current TVL (Total Value Locked) of the entire protocol "
   totalValueLockedUSD: BigDecimal!
 
-  " Total supply of minted tokens in native amounts, with same ordering as mintedTokens. Only applies to CDP "
-  mintedTokenSupplies: [BigInt!]
-
   ##### Revenue #####
 
   " Revenue claimed by suppliers to the protocol. LPs on DEXs (e.g. 0.25% of the swap fee in Sushiswap). Depositors on Lending Protocols. NFT sellers on OpenSea. "
@@ -733,7 +730,7 @@ type Market @entity @regularPolling {
   protocol: LendingProtocol!
 
   " Name of market "
-  name: String
+  name: String!
 
   " Is this market active or is it frozen "
   isActive: Boolean!
@@ -767,6 +764,7 @@ type Market @entity @regularPolling {
 
   " A unique identifier that can relate multiple markets. e.g. a common address that is the same for each related market. This is useful for markets with multiple input tokens "
   relation: Bytes
+  # TODO: should we keep this?
 
   ##### Quantitative Data #####
 
@@ -783,10 +781,10 @@ type Market @entity @regularPolling {
   rates: [InterestRate!]
 
   " Total amount of reserves (in USD) "
-  reserves: BigDecimal
+  reserves: BigDecimal!
 
   " The amount of revenue that is converted to reserves at the current time. 20% reserve factor should be in format 0.20 "
-  reserveFactor: BigDecimal
+  reserveFactor: BigDecimal!
 
   " The token that can be borrowed (e.g. inputToken in POOLED and generally a stable in CDPs) "
   borrowedToken: Token!
@@ -977,9 +975,6 @@ type MarketDailySnapshot @entity @dailySnapshot {
   " A unique identifier that can relate multiple markets together. e.g. a common address that they all share. This is useful for markets with multiple input tokens "
   relation: Bytes
 
-  " Total supply of output tokens that are staked. Used to calculate reward APY. "
-  stakedOutputTokenAmount: BigInt
-
   ##### Quantitative Data #####
 
   " Amount of input token in the market (same order as inputTokens) "
@@ -1008,15 +1003,6 @@ type MarketDailySnapshot @entity @dailySnapshot {
 
   " Amount of input tokens borrowed in this market using variable interest rates (in native terms) "
   variableBorrowedTokenBalance: BigInt
-
-  " Amount of input tokens borrowed in this market using stable interest rates (in native terms) "
-  stableBorrowedTokenBalance: BigInt
-
-  " Allowed limit to how much of the underlying asset can be supplied to this market. "
-  supplyCap: BigInt
-
-  " Allowed limit for how much of the underlying asset can be borrowed from this market. "
-  borrowCap: BigInt
 
   " Current TVL (Total Value Locked) of this market "
   totalValueLockedUSD: BigDecimal!
@@ -1356,14 +1342,6 @@ type Account @entity @regularPolling {
   " All flashloan events where this account executed it "
   flashloans: [Flashloan!]! @derivedFrom(field: "account")
 
-  " The amount of rewards claimed by this account in USD (use the USD value at the time of claiming) "
-  rewardsClaimedUSD: BigDecimal
-
-  " Markets that the account is using as collateral "
-  _enabledCollaterals: [Market!]
-
-  " efficient mode flag "
-  _eMode: Boolean
 }
 
 # A position is defined as who has control over the collateral or debt
@@ -1406,9 +1384,6 @@ type Position @entity @regularPolling {
 
   " Whether this position has been enabled as a collateral (only applies to LENDER positions). For protocols (e.g. MakerDAO) that doesn't require enabling explicitly, this will always be true. "
   isCollateral: Boolean
-
-  " Whether this position is being isolated from risk from other positions (only applies to LENDER positions). For protocols (e.g. Aave V3) this reduces risk exposure from other user positions. "
-  isIsolated: Boolean
 
   " Token balance in this position, in native amounts "
   balance: BigInt!
