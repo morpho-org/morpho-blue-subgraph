@@ -21,17 +21,6 @@ import { PositionSide } from "./constants";
 import { SnapshotManager } from "./snapshots";
 import { TokenManager } from "./token";
 
-/**
- * This file contains the PositionManager class, which is used to
- * make changes to a given position.
- *
- * Schema Version:  3.1.0
- * SDK Version:     1.0.6
- * Author(s):
- *  - @dmelotik
- *  - @dhruv-chauhan
- */
-
 export class PositionManager {
   private _counterID: string;
   private _position: Position | null = null;
@@ -59,16 +48,10 @@ export class PositionManager {
     this._side = side;
   }
 
-  getPositionID(): string | null {
-    if (this._position) {
-      return this._position!.id;
-    }
-    return null;
-  }
   addCollateralPosition(
     event: ethereum.Event,
     amountSupplied: BigInt
-  ): string | null {
+  ): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       positionCounter = new _PositionCounter(this._counterID);
@@ -102,12 +85,9 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position;
   }
-  addSupplyPosition(
-    event: ethereum.Event,
-    sharesSupplied: BigInt
-  ): string | null {
+  addSupplyPosition(event: ethereum.Event, sharesSupplied: BigInt): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       positionCounter = new _PositionCounter(this._counterID);
@@ -156,12 +136,9 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position;
   }
-  addBorrowPosition(
-    event: ethereum.Event,
-    sharesBorrowed: BigInt
-  ): string | null {
+  addBorrowPosition(event: ethereum.Event, sharesBorrowed: BigInt): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       positionCounter = new _PositionCounter(this._counterID);
@@ -210,19 +187,19 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position;
   }
 
   reduceCollateralPosition(
     event: ethereum.Event,
     amountWithdrawn: BigInt
-  ): string | null {
+  ): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       log.critical("[subtractPosition] position counter {} not found", [
         this._counterID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
     const positionID = positionCounter.id
       .concat("-")
@@ -234,7 +211,7 @@ export class PositionManager {
       log.critical("[subtractPosition] position {} not found", [
         positionID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
 
     position.balance = position.balance.minus(amountWithdrawn);
@@ -251,18 +228,15 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position!;
   }
-  reduceBorrowPosition(
-    event: ethereum.Event,
-    sharesRepaid: BigInt
-  ): string | null {
+  reduceBorrowPosition(event: ethereum.Event, sharesRepaid: BigInt): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       log.critical("[subtractPosition] position counter {} not found", [
         this._counterID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
     const positionID = positionCounter.id
       .concat("-")
@@ -274,7 +248,7 @@ export class PositionManager {
       log.critical("[subtractPosition] position {} not found", [
         positionID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
     const amountRepaid = toAssetsDown(
       sharesRepaid,
@@ -302,19 +276,19 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position!;
   }
 
   reduceSupplyPosition(
     event: ethereum.Event,
     sharesWithdrawn: BigInt
-  ): string | null {
+  ): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       log.critical("[subtractPosition] position counter {} not found", [
         this._counterID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
     const positionID = positionCounter.id
       .concat("-")
@@ -326,7 +300,7 @@ export class PositionManager {
       log.critical("[subtractPosition] position {} not found", [
         positionID.toString(),
       ]);
-      return null;
+      return this._position!;
     }
     const amountWithdrawn = toAssetsDown(
       sharesWithdrawn,
@@ -354,7 +328,7 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this.getPositionID();
+    return this._position!;
   }
 
   private _snapshotPosition(event: ethereum.Event): void {

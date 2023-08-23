@@ -19,7 +19,6 @@ import {
   Withdraw,
   WithdrawCollateral,
 } from "../generated/MorphoBlue/MorphoBlue";
-import { Position } from "../generated/schema";
 
 import { createMarket, getMarket, getZeroMarket } from "./initializers/markets";
 import { getProtocol } from "./initializers/protocol";
@@ -37,6 +36,8 @@ export function handleAccrueInterests(event: AccrueInterests): void {
   );
   market.totalSupply = market.totalSupply.plus(event.params.accruedInterests);
   market.totalBorrow = market.totalBorrow.plus(event.params.accruedInterests);
+  market.variableBorrowedTokenBalance = market.totalBorrow;
+  market.inputTokenBalance = market.totalSupply;
   market.totalSupplyShares = market.totalSupplyShares.plus(
     event.params.feeShares
   );
@@ -69,7 +70,7 @@ export function handleAccrueInterests(event: AccrueInterests): void {
 
   const dataManager = new DataManager(market.id, event);
 
-  // TODO: update protocol & market metrics
+  dataManager.updateMarketAndProtocolData();
 }
 
 export function handleBorrow(event: Borrow): void {
@@ -77,14 +78,24 @@ export function handleBorrow(event: Borrow): void {
 
   const account = new AccountManager(event.params.onBehalf).getAccount();
 
-  const position = new PositionManager(account, market, PositionSide.BORROWER);
+  const positionManager = new PositionManager(
+    account,
+    market,
+    PositionSide.BORROWER
+  );
 
-  position.addBorrowPosition(event, event.params.shares);
+  const position = positionManager.addBorrowPosition(
+    event,
+    event.params.shares
+  );
 
   // We update the market after updating the position
   market.totalBorrow = market.totalBorrow.plus(event.params.assets);
   market.totalBorrowShares = market.totalBorrowShares.plus(event.params.shares);
   market.save();
+
+  const manager = new DataManager(market.id, event);
+  manager.createBorrow(position, event.params.shares, event.params.assets);
 }
 
 export function handleCreateMarket(event: CreateMarket): void {
@@ -119,12 +130,10 @@ export function handleFlashLoan(event: FlashLoan): void {
 
   const token = new TokenManager(event.params.token, event);
 
-  const amountUsd = token.getAmountUSD(event.params.assets);
   manager.createFlashloan(
     event.params.token,
     event.params.caller,
-    event.params.assets,
-    amountUsd
+    event.params.assets
   );
 }
 
@@ -136,7 +145,16 @@ export function handleLiquidate(event: Liquidate): void {
   market.totalCollateral = market.totalCollateral.minus(event.params.seized);
   market.save();
 
+  const liquidatorAccount = new AccountManager(
+    event.params.caller
+  ).getAccount();
+
+  liquidatorAccount.liquidationCount += 1;
+  liquidatorAccount.save();
+
   const account = new AccountManager(event.params.borrower).getAccount();
+  account.liquidateCount += 1;
+  account.save();
 
   const borrowPosition = new PositionManager(
     account,
@@ -182,25 +200,25 @@ export function handleRepay(event: Repay): void {
   const market = getMarket(event.params.id);
   const account = new AccountManager(event.params.onBehalf).getAccount();
 
-  const position = new PositionManager(account, market, PositionSide.BORROWER);
-
-  // The current position must be defined for a Repay
-  const currentPosition = Position.load(position.getPositionID()!)!;
-  const initialShares = currentPosition.shares!;
-  const userShares = initialShares.minus(event.params.shares);
-  const newBalance = toAssetsUp(
-    userShares,
-    market.totalBorrowShares,
-    market.totalBorrow
+  const positionManager = new PositionManager(
+    account,
+    market,
+    PositionSide.BORROWER
   );
 
-  position.reduceBorrowPosition(event, event.params.shares);
+  const position = positionManager.reduceBorrowPosition(
+    event,
+    event.params.shares
+  );
 
   market.totalBorrow = market.totalBorrow.minus(event.params.assets);
   market.totalBorrowShares = market.totalBorrowShares.minus(
     event.params.shares
   );
   market.save();
+
+  const manager = new DataManager(market.id, event);
+  manager.createRepay(position, event.params.shares, event.params.assets);
 }
 
 export function handleSetAuthorization(event: SetAuthorization): void {}
@@ -227,13 +245,23 @@ export function handleSetOwner(event: SetOwner): void {
 export function handleSupply(event: Supply): void {
   const market = getMarket(event.params.id);
   const account = new AccountManager(event.params.onBehalf).getAccount();
-  const position = new PositionManager(account, market, PositionSide.SUPPLIER);
+  const positionManager = new PositionManager(
+    account,
+    market,
+    PositionSide.SUPPLIER
+  );
 
-  position.addSupplyPosition(event, event.params.shares);
+  const position = positionManager.addSupplyPosition(
+    event,
+    event.params.shares
+  );
 
   market.totalSupply = market.totalSupply.plus(event.params.assets);
   market.totalSupplyShares = market.totalSupplyShares.plus(event.params.shares);
   market.save();
+
+  const manager = new DataManager(market.id, event);
+  manager.createDeposit(position, event.params.shares, event.params.assets);
 }
 
 export function handleSupplyCollateral(event: SupplyCollateral): void {
@@ -241,29 +269,44 @@ export function handleSupplyCollateral(event: SupplyCollateral): void {
   market.totalCollateral = market.totalCollateral.plus(event.params.assets);
   market.save();
 
-  const token = new TokenManager(market.borrowedToken, event);
   const account = new AccountManager(event.params.onBehalf).getAccount();
-  const position = new PositionManager(
+  const positionManager = new PositionManager(
     account,
     market,
     PositionSide.COLLATERAL
   );
 
-  position.addCollateralPosition(event, event.params.assets);
+  const position = positionManager.addCollateralPosition(
+    event,
+    event.params.assets
+  );
+
+  const manager = new DataManager(market.id, event);
+  manager.createDepositCollateral(position, event.params.assets);
 }
 
 export function handleWithdraw(event: Withdraw): void {
   const market = getMarket(event.params.id);
   const account = new AccountManager(event.params.onBehalf).getAccount();
-  const position = new PositionManager(account, market, PositionSide.SUPPLIER);
+  const positionManager = new PositionManager(
+    account,
+    market,
+    PositionSide.SUPPLIER
+  );
 
-  position.reduceSupplyPosition(event, event.params.shares);
+  const position = positionManager.reduceSupplyPosition(
+    event,
+    event.params.shares
+  );
 
   market.totalSupply = market.totalSupply.minus(event.params.assets);
   market.totalSupplyShares = market.totalSupplyShares.minus(
     event.params.shares
   );
   market.save();
+
+  const manager = new DataManager(market.id, event);
+  manager.createWithdraw(position, event.params.shares, event.params.assets);
 }
 
 export function handleWithdrawCollateral(event: WithdrawCollateral): void {
@@ -272,11 +315,17 @@ export function handleWithdrawCollateral(event: WithdrawCollateral): void {
   market.save();
 
   const account = new AccountManager(event.params.onBehalf).getAccount();
-  const position = new PositionManager(
+  const positionManager = new PositionManager(
     account,
     market,
     PositionSide.COLLATERAL
   );
 
-  position.reduceCollateralPosition(event, event.params.assets);
+  const position = positionManager.reduceCollateralPosition(
+    event,
+    event.params.assets
+  );
+
+  const manager = new DataManager(market.id, event);
+  manager.createWithdrawCollateral(position, event.params.assets);
 }

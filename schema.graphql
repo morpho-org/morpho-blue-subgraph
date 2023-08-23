@@ -1671,6 +1671,8 @@ type Withdraw implements Event @entity(immutable: true) @transaction {
   ##### Add Ons #####
 
   isCollateral: Boolean!
+
+  shares: BigInt
 }
 
 # For CDPs, use this for mint events
@@ -1722,6 +1724,9 @@ type Borrow implements Event @entity(immutable: true) @transaction {
 
   " Amount of token borrowed in USD "
   amountUSD: BigDecimal!
+
+  #### Addons ####
+  shares: BigInt!
 }
 
 # For CDPs, use this for burn events
@@ -1773,6 +1778,9 @@ type Repay implements Event @entity(immutable: true) @transaction {
 
   " Amount of token repaid/burned in USD "
   amountUSD: BigDecimal!
+
+  #### Addons ####
+  shares: BigInt!
 }
 
 type Liquidate implements Event @entity(immutable: true) @transaction {

@@ -67,10 +67,9 @@ export class TokenManager {
     return this.token.name;
   }
 
-  updatePrice(newPriceUSD: BigDecimal): void {
-    this.token.lastPriceBlockNumber = this.event.block.number;
-    this.token.lastPriceUSD = newPriceUSD;
-    this.token.save();
+  updatePrice(): BigDecimal {
+    // TODO: add Chainlink logic of collateral / borrowed conversion logic
+    return this.token.lastPriceUSD!;
   }
 
   getPriceUSD(): BigDecimal {
