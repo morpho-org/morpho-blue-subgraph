@@ -108,6 +108,7 @@ export function createMarket(
   market.closedPositionCount = INT_ZERO;
   market.lendingPositionCount = INT_ZERO;
   market.borrowingPositionCount = INT_ZERO;
+  market.collateralPositionCount = INT_ZERO;
 
   market.totalSupplyShares = BigInt.zero();
   market.totalBorrowShares = BigInt.zero();

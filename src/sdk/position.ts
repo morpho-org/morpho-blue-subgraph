@@ -1,10 +1,4 @@
-import {
-  BigDecimal,
-  Bytes,
-  BigInt,
-  log,
-  ethereum,
-} from "@graphprotocol/graph-ts";
+import { BigInt, log, ethereum } from "@graphprotocol/graph-ts";
 
 import {
   Account,
@@ -14,6 +8,7 @@ import {
   PositionSnapshot,
 } from "../../generated/schema";
 import { getProtocol } from "../initializers/protocol";
+import { toAssetsDown, toAssetsUp } from "../maths/shares";
 
 import {
   exponentToBigDecimal,
@@ -38,74 +33,45 @@ import { TokenManager } from "./token";
  */
 
 export class PositionManager {
-  private counterID: string;
-  private position: Position | null = null;
-  private market: Market;
-  private account: Account;
-  private side: string;
+  private _counterID: string;
+  private _position: Position | null = null;
+  private _market: Market;
+  private _account: Account;
+  private _side: string;
 
   constructor(account: Account, market: Market, side: string) {
-    this.counterID = account.id
+    this._counterID = account.id
       .toHexString()
       .concat("-")
       .concat(market.id.toHexString())
       .concat("-")
       .concat(side);
-    const positionCounter = _PositionCounter.load(this.counterID);
+    const positionCounter = _PositionCounter.load(this._counterID);
     if (positionCounter) {
       const positionID = positionCounter.id
         .concat("-")
         .concat(positionCounter.nextCount.toString());
-      this.position = Position.load(positionID);
+      this._position = Position.load(positionID);
     }
 
-    this.market = market;
-    this.account = account;
-    this.side = side;
+    this._market = market;
+    this._account = account;
+    this._side = side;
   }
 
   getPositionID(): string | null {
-    if (this.position) {
-      return this.position!.id;
+    if (this._position) {
+      return this._position!.id;
     }
     return null;
   }
-
-  _getPositionBalance(): BigInt | null {
-    if (this.position) {
-      return this.position!.balance;
-    }
-    return null;
-  }
-
-  setCollateral(isCollateral: boolean): void {
-    if (this.position) {
-      this.position!.isCollateral = isCollateral;
-      this.position!.save();
-    }
-  }
-
-  addPosition(
+  addCollateralPosition(
     event: ethereum.Event,
-    asset: Bytes,
-    newBalance: BigInt,
-    shares: BigInt | null,
-    transactionType: string,
-    priceUSD: BigDecimal
+    amountSupplied: BigInt
   ): string | null {
-    if (
-      transactionType === TransactionType.DEPOSIT ||
-      (transactionType === TransactionType.BORROW && shares === null)
-    ) {
-      log.critical(
-        "[addPosition] shares must be provided for supply or borrow",
-        []
-      );
-      return null;
-    }
-    let positionCounter = _PositionCounter.load(this.counterID);
+    let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
-      positionCounter = new _PositionCounter(this.counterID);
+      positionCounter = new _PositionCounter(this._counterID);
       positionCounter.nextCount = 0;
       positionCounter.lastTimestamp = event.block.timestamp;
       positionCounter.save();
@@ -115,233 +81,321 @@ export class PositionManager {
       .concat(positionCounter.nextCount.toString());
 
     let position = Position.load(positionID);
-    const openPosition = position == null;
-    if (!openPosition) {
-      // update existing position
-      position = position!;
-      position.balance = newBalance;
-      if (
-        transactionType == TransactionType.DEPOSIT ||
-        transactionType === TransactionType.DEPOSIT_COLLATERAL
-      ) {
-        position.depositCount += INT_ONE;
-      } else if (transactionType == TransactionType.BORROW) {
-        position.borrowCount += INT_ONE;
-      }
-      // Note: liquidateCount is not incremented here
-      position.save();
-      this.position = position;
 
-      //
-      // take position snapshot
-      //
-      this.snapshotPosition(event, priceUSD);
-      return null;
+    if (!position) {
+      position = this._createPosition(
+        positionID,
+        event,
+        TransactionType.DEPOSIT_COLLATERAL
+      );
     }
-    position = new Position(positionID);
-    position.account = this.account.id;
-    position.market = this.market.id;
-    position.asset = asset;
-    position.hashOpened = event.transaction.hash;
-    position.blockNumberOpened = event.block.number;
-    position.timestampOpened = event.block.timestamp;
-    position.side = this.side;
-    position.balance = newBalance;
-    if (shares) position.shares = shares;
-    position.depositCount = INT_ZERO;
-    position.withdrawCount = INT_ZERO;
-    position.borrowCount = INT_ZERO;
-    position.repayCount = INT_ZERO;
-    position.liquidationCount = INT_ZERO;
-    position.transferredCount = INT_ZERO;
-    position.receivedCount = INT_ZERO;
 
-    if (transactionType == TransactionType.DEPOSIT) {
-      position.depositCount += INT_ONE;
-      position.isCollateral = false;
-    } else if (transactionType === TransactionType.DEPOSIT_COLLATERAL) {
-      position.depositCount += INT_ONE;
-      position.isCollateral = true;
-    } else if (transactionType == TransactionType.BORROW) {
-      position.borrowCount += INT_ONE;
-    }
+    position.balance = position.balance.plus(amountSupplied);
+    position.principal = position.balance;
+    position.depositCollateralCount += INT_ONE;
+    position.depositCount += INT_ONE;
+
     position.save();
 
-    //
-    // update account position
-    //
-    this.account.positionCount += 1;
-    this.account.openPositionCount += 1;
-    this.account.save();
+    this._position = position;
 
-    //
-    // update market position
-    //
-    this.market.positionCount += 1;
-    this.market.openPositionCount += 1;
-
-    if (
-      transactionType == TransactionType.DEPOSIT ||
-      transactionType == TransactionType.DEPOSIT_COLLATERAL
-    ) {
-      this.market.lendingPositionCount += 1;
-    } else if (transactionType == TransactionType.BORROW) {
-      this.market.borrowingPositionCount += 1;
-    }
-    this.market.save();
-
-    //
-    // update protocol position
-    //
-    const protocol = getProtocol();
-    protocol.cumulativePositionCount += 1;
-    protocol.openPositionCount += 1;
-    protocol.save();
-
-    this.position = position;
-
-    //
     // take position snapshot
-    //
-    this.snapshotPosition(event, priceUSD);
-    this.dailyActivePosition(positionCounter, event);
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
+    return this.getPositionID();
+  }
+  addSupplyPosition(
+    event: ethereum.Event,
+    sharesSupplied: BigInt
+  ): string | null {
+    let positionCounter = _PositionCounter.load(this._counterID);
+    if (!positionCounter) {
+      positionCounter = new _PositionCounter(this._counterID);
+      positionCounter.nextCount = 0;
+      positionCounter.lastTimestamp = event.block.timestamp;
+      positionCounter.save();
+    }
+    const positionID = positionCounter.id
+      .concat("-")
+      .concat(positionCounter.nextCount.toString());
+
+    let position = Position.load(positionID);
+
+    if (!position) {
+      position = this._createPosition(
+        positionID,
+        event,
+        TransactionType.DEPOSIT_COLLATERAL
+      );
+    }
+
+    const amountSupplied = toAssetsDown(
+      sharesSupplied,
+      this._market.totalSupplyShares,
+      this._market.totalSupply
+    );
+    position.shares = position.shares
+      ? position.shares.plus(sharesSupplied)
+      : sharesSupplied;
+
+    const totalSupply = toAssetsDown(
+      position.shares!,
+      this._market.totalSupplyShares,
+      this._market.totalSupply
+    );
+
+    position.balance = totalSupply;
+    position.principal = position.principal
+      ? position.principal.plus(amountSupplied)
+      : amountSupplied;
+    position.depositCount += INT_ONE;
+    position.save();
+
+    this._position = position;
+
+    // take position snapshot
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
+    return this.getPositionID();
+  }
+  addBorrowPosition(
+    event: ethereum.Event,
+    sharesBorrowed: BigInt
+  ): string | null {
+    let positionCounter = _PositionCounter.load(this._counterID);
+    if (!positionCounter) {
+      positionCounter = new _PositionCounter(this._counterID);
+      positionCounter.nextCount = 0;
+      positionCounter.lastTimestamp = event.block.timestamp;
+      positionCounter.save();
+    }
+    const positionID = positionCounter.id
+      .concat("-")
+      .concat(positionCounter.nextCount.toString());
+
+    let position = Position.load(positionID);
+
+    if (!position) {
+      position = this._createPosition(
+        positionID,
+        event,
+        TransactionType.BORROW
+      );
+    }
+
+    const amountBorrowed = toAssetsUp(
+      sharesBorrowed,
+      this._market.totalBorrowShares,
+      this._market.totalBorrow
+    );
+    position.shares = position.shares
+      ? position.shares.plus(sharesBorrowed)
+      : sharesBorrowed;
+
+    const totalBorrow = toAssetsUp(
+      position.shares!,
+      this._market.totalBorrowShares,
+      this._market.totalBorrow
+    );
+
+    position.balance = totalBorrow;
+    position.principal = position.principal
+      ? position.principal.plus(amountBorrowed)
+      : amountBorrowed;
+    position.borrowCount += INT_ONE;
+    position.save();
+
+    this._position = position;
+
+    // take position snapshot
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
     return this.getPositionID();
   }
 
-  subtractPosition(
+  reduceCollateralPosition(
     event: ethereum.Event,
-    newBalance: BigInt,
-    shares: BigInt | null,
-    transactionType: string,
-    priceUSD: BigDecimal
+    amountWithdrawn: BigInt
   ): string | null {
-    if (
-      transactionType === TransactionType.WITHDRAW ||
-      (transactionType === TransactionType.WITHDRAW_COLLATERAL &&
-        shares === null)
-    ) {
-      log.critical(
-        "[subtractPosition] shares must be provided for withdraw or repay",
-        []
-      );
-      return null;
-    }
-    const positionCounter = _PositionCounter.load(this.counterID);
+    let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       log.critical("[subtractPosition] position counter {} not found", [
-        this.counterID,
+        this._counterID.toString(),
       ]);
       return null;
     }
     const positionID = positionCounter.id
       .concat("-")
       .concat(positionCounter.nextCount.toString());
-    const position = Position.load(positionID);
+
+    let position = Position.load(positionID);
+
     if (!position) {
-      log.critical("[subtractPosition] position {} not found", [positionID]);
+      log.critical("[subtractPosition] position {} not found", [
+        positionID.toString(),
+      ]);
       return null;
     }
 
-    position.balance = newBalance;
-    if (shares) position.shares = shares;
-
-    if (
-      transactionType == TransactionType.WITHDRAW ||
-      transactionType === TransactionType.WITHDRAW_COLLATERAL
-    ) {
-      position.withdrawCount += INT_ONE;
-    } else if (transactionType == TransactionType.REPAY) {
-      position.repayCount += INT_ONE;
-    } else if (transactionType == TransactionType.LIQUIDATE) {
-      position.liquidationCount += INT_ONE;
+    position.balance = position.balance.minus(amountWithdrawn);
+    position.principal = position.balance;
+    position.withdrawCount += INT_ONE;
+    position.withdrawCollateralCount += INT_ONE;
+    this._position = position;
+    if (position.balance.equals(BigInt.zero())) {
+      this._closePosition(position, event);
     }
-    position.save();
 
-    const closePosition = position.balance == BigInt.zero();
-    if (closePosition) {
-      //
-      // update position counter
-      //
-      positionCounter.nextCount += INT_ONE;
-      positionCounter.save();
+    this._position = position;
 
-      //
-      // close position
-      //
-      position.hashClosed = event.transaction.hash;
-      position.blockNumberClosed = event.block.number;
-      position.timestampClosed = event.block.timestamp;
-      position.save();
-
-      //
-      // update account position
-      //
-      this.account.openPositionCount -= INT_ONE;
-      this.account.closedPositionCount += INT_ONE;
-      this.account.save();
-
-      //
-      // update market position
-      //
-      this.market.openPositionCount -= INT_ONE;
-      this.market.closedPositionCount += INT_ONE;
-      this.market.save();
-
-      //
-      // update protocol position
-      //
-      const protocol = getProtocol();
-      protocol.openPositionCount -= INT_ONE;
-      protocol.save();
+    // take position snapshot
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
+    return this.getPositionID();
+  }
+  reduceBorrowPosition(
+    event: ethereum.Event,
+    sharesRepaid: BigInt
+  ): string | null {
+    let positionCounter = _PositionCounter.load(this._counterID);
+    if (!positionCounter) {
+      log.critical("[subtractPosition] position counter {} not found", [
+        this._counterID.toString(),
+      ]);
+      return null;
     }
-    this.position = position;
+    const positionID = positionCounter.id
+      .concat("-")
+      .concat(positionCounter.nextCount.toString());
 
-    //
-    // update position snapshot
-    //
-    this.snapshotPosition(event, priceUSD);
-    this.dailyActivePosition(positionCounter, event);
+    let position = Position.load(positionID);
+
+    if (!position) {
+      log.critical("[subtractPosition] position {} not found", [
+        positionID.toString(),
+      ]);
+      return null;
+    }
+    const amountRepaid = toAssetsDown(
+      sharesRepaid,
+      this._market.totalBorrowShares,
+      this._market.totalBorrow
+    );
+    position.shares = position.shares!.minus(sharesRepaid);
+
+    const totalBorrow = toAssetsUp(
+      position.shares!,
+      this._market.totalBorrowShares,
+      this._market.totalBorrow
+    );
+
+    position.balance = totalBorrow;
+    position.principal = position.principal!.minus(amountRepaid);
+    position.repayCount += INT_ONE;
+    this._position = position;
+    if (position.shares!.equals(BigInt.zero())) {
+      this._closePosition(position, event);
+    }
+
+    this._position = position;
+
+    // take position snapshot
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
     return this.getPositionID();
   }
 
-  private snapshotPosition(event: ethereum.Event, priceUSD: BigDecimal): void {
+  reduceSupplyPosition(
+    event: ethereum.Event,
+    sharesWithdrawn: BigInt
+  ): string | null {
+    let positionCounter = _PositionCounter.load(this._counterID);
+    if (!positionCounter) {
+      log.critical("[subtractPosition] position counter {} not found", [
+        this._counterID.toString(),
+      ]);
+      return null;
+    }
+    const positionID = positionCounter.id
+      .concat("-")
+      .concat(positionCounter.nextCount.toString());
+
+    let position = Position.load(positionID);
+
+    if (!position) {
+      log.critical("[subtractPosition] position {} not found", [
+        positionID.toString(),
+      ]);
+      return null;
+    }
+    const amountWithdrawn = toAssetsDown(
+      sharesWithdrawn,
+      this._market.totalSupplyShares,
+      this._market.totalSupply
+    );
+    position.shares = position.shares!.minus(sharesWithdrawn);
+
+    const totalSupply = toAssetsDown(
+      position.shares!,
+      this._market.totalSupplyShares,
+      this._market.totalSupply
+    );
+
+    position.balance = totalSupply;
+    position.principal = position.principal!.minus(amountWithdrawn);
+    position.withdrawCount += INT_ONE;
+    this._position = position;
+    if (position.shares!.equals(BigInt.zero())) {
+      this._closePosition(position, event);
+    }
+
+    this._position = position;
+
+    // take position snapshot
+    this._snapshotPosition(event);
+    this._countDailyActivePosition(positionCounter, event);
+    return this.getPositionID();
+  }
+
+  private _snapshotPosition(event: ethereum.Event): void {
     const snapshot = new PositionSnapshot(
-      this.position!.id.concat("-")
+      this._position!.id.concat("-")
         .concat(event.transaction.hash.toHexString())
         .concat("-")
         .concat(event.logIndex.toString())
     );
-    const token = new TokenManager(this.position!.asset, event);
+    const token = new TokenManager(this._position!.asset, event);
     const mantissaFactorBD = exponentToBigDecimal(token.getDecimals());
     snapshot.hash = event.transaction.hash;
     snapshot.logIndex = event.logIndex.toI32();
     snapshot.nonce = event.transaction.nonce;
-    snapshot.account = this.account.id;
-    snapshot.position = this.position!.id;
-    snapshot.balance = this.position!.balance;
-    snapshot.balanceUSD = this.position!.balance.toBigDecimal()
+    snapshot.account = this._account.id;
+    snapshot.position = this._position!.id;
+    snapshot.balance = this._position!.balance;
+    snapshot.balanceUSD = this._position!.balance.toBigDecimal()
       .div(mantissaFactorBD)
-      .times(priceUSD);
+      .times(token.getPriceUSD());
     snapshot.blockNumber = event.block.number;
     snapshot.timestamp = event.block.timestamp;
 
-    if (this.position!.principal) snapshot.principal = this.position!.principal;
+    if (this._position!.principal)
+      snapshot.principal = this._position!.principal;
     if (
-      this.market.borrowIndex &&
-      this.position!.side == PositionSide.BORROWER
+      this._market.borrowIndex &&
+      this._position!.side == PositionSide.BORROWER
     ) {
-      snapshot.index = this.market.borrowIndex;
+      snapshot.index = this._market.borrowIndex;
     } else if (
-      this.market.supplyIndex &&
-      this.position!.side == PositionSide.COLLATERAL
+      this._market.supplyIndex &&
+      this._position!.side == PositionSide.COLLATERAL
     ) {
-      snapshot.index = this.market.supplyIndex;
+      snapshot.index = this._market.supplyIndex;
     }
 
     snapshot.save();
   }
 
-  private dailyActivePosition(
+  private _countDailyActivePosition(
     counter: _PositionCounter,
     event: ethereum.Event
   ): void {
@@ -352,56 +406,99 @@ export class PositionManager {
     }
 
     // this is a new active position
-    const snapshots = new SnapshotManager(event, this.market);
-    snapshots.addDailyActivePosition(this.side);
+    const snapshots = new SnapshotManager(event, this._market);
+    snapshots.addDailyActivePosition(this._side);
 
     counter.lastTimestamp = event.block.timestamp;
     counter.save();
   }
 
-  private _checkPositionConsistency(
-    positionSide: string,
+  _createPosition(
+    positionID: string,
+    event: ethereum.Event,
     transactionType: string
-  ): null {
-    if (
-      positionSide === PositionSide.COLLATERAL &&
-      !(
-        transactionType === TransactionType.DEPOSIT_COLLATERAL ||
-        transactionType === TransactionType.WITHDRAW_COLLATERAL
-      )
-    ) {
-      log.critical(
-        "[subtractPosition] transaction type {} is not valid for collateral position",
-        [transactionType as string]
-      );
-      return null;
+  ): Position {
+    const position = new Position(positionID);
+    position.account = this._account.id;
+    position.market = this._market.id;
+
+    position.asset =
+      transactionType === TransactionType.BORROW
+        ? this._market.borrowedToken
+        : this._market.inputToken;
+    position.hashOpened = event.transaction.hash;
+    position.blockNumberOpened = event.block.number;
+    position.timestampOpened = event.block.timestamp;
+    position.side = this._side;
+    position.depositCount = INT_ZERO;
+    position.depositCollateralCount = INT_ZERO;
+    position.withdrawCount = INT_ZERO;
+    position.borrowCount = INT_ZERO;
+    position.repayCount = INT_ZERO;
+    position.liquidationCount = INT_ZERO;
+    position.transferredCount = INT_ZERO;
+    position.receivedCount = INT_ZERO;
+
+    if (transactionType == TransactionType.DEPOSIT) {
+      position.isCollateral = false;
+    } else if (transactionType === TransactionType.DEPOSIT_COLLATERAL) {
+      position.isCollateral = true;
     }
-    if (
-      positionSide === PositionSide.SUPPLIER &&
-      !(
-        transactionType === TransactionType.DEPOSIT ||
-        transactionType === TransactionType.WITHDRAW
-      )
-    ) {
-      log.critical(
-        "[subtractPosition] transaction type {} is not valid for supply position",
-        [transactionType as string]
-      );
-      return null;
+    position.save();
+
+    // update account position
+    this._account.positionCount += 1;
+    this._account.openPositionCount += 1;
+    this._account.save();
+
+    // update market position
+    this._market.positionCount += 1;
+    this._market.openPositionCount += 1;
+    if (transactionType === TransactionType.DEPOSIT) {
+      this._market.lendingPositionCount += 1;
+    } else if (transactionType == TransactionType.DEPOSIT_COLLATERAL) {
+      this._market.lendingPositionCount += 1;
+      this._market.collateralPositionCount += 1;
+    } else if (transactionType == TransactionType.BORROW) {
+      this._market.borrowingPositionCount += 1;
+    } else {
+      log.critical("[_createPosition] invalid transaction type {}", [
+        transactionType,
+      ]);
+      return position;
     }
-    if (
-      positionSide === PositionSide.BORROWER &&
-      !(
-        transactionType === TransactionType.BORROW ||
-        transactionType === TransactionType.REPAY
-      )
-    ) {
-      log.critical(
-        "[subtractPosition] transaction type {} is not valid for borrow position",
-        [transactionType as string]
-      );
-      return null;
+    this._market.save();
+
+    // update protocol position
+    const protocol = getProtocol();
+    protocol.cumulativePositionCount += 1;
+    protocol.openPositionCount += 1;
+    protocol.save();
+    return position;
+  }
+
+  private _closePosition(position: Position, event: ethereum.Event): void {
+    position.hashClosed = event.transaction.hash;
+    position.blockNumberClosed = event.block.number;
+    position.timestampClosed = event.block.timestamp;
+    position.save();
+
+    // update account position
+    this._account.openPositionCount -= 1;
+    this._account.closedPositionCount += 1;
+    this._account.save();
+
+    // update market position
+    this._market.openPositionCount -= 1;
+    this._market.closedPositionCount += 1;
+    if (position.isCollateral) {
+      this._market.collateralPositionCount -= 1;
     }
-    return null;
+    this._market.save();
+
+    // update protocol position
+    const protocol = getProtocol();
+    protocol.openPositionCount -= 1;
+    protocol.save();
   }
 }

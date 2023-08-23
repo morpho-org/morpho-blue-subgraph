@@ -937,7 +937,10 @@ type Market @entity @regularPolling {
 
   ### Addons ###
 
+  collateralPositionCount: Int!
+
   totalCollateral: BigInt!
+
 
   totalSupplyShares: BigInt!
   totalBorrowShares: BigInt!
@@ -1436,6 +1439,9 @@ type Position @entity @regularPolling {
   ##### Addons #####
 
   shares: BigInt
+
+  depositCollateralCount: Int!
+  withdrawCollateralCount: Int!
 }
 
 # Unlike other snapshots that are taken at a fixed time interval. Position
