@@ -120,9 +120,9 @@ export function createMarket(
 
   market.save();
   if (marketStruct) {
-    const oracle = new Oracle(market.id.concat(marketStruct!.oracle));
+    const oracle = new Oracle(market.id.concat(marketStruct.oracle));
     oracle.market = market.id;
-    oracle.oracleAddress = marketStruct!.oracle;
+    oracle.oracleAddress = marketStruct.oracle;
     oracle.blockCreated = event.block.number;
     oracle.timestampCreated = event.block.timestamp;
     oracle.isActive = true;
@@ -155,7 +155,7 @@ export function getZeroMarket(event: ethereum.Event): Market {
   if (!market) {
     return createMarket(Address.zero(), null, event);
   }
-  return market!;
+  return market;
 }
 
 export function getMarket(id: Bytes): Market {

@@ -1,9 +1,4 @@
-import {
-  Address,
-  BigDecimal,
-  Bytes,
-  dataSource,
-} from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, dataSource } from "@graphprotocol/graph-ts";
 
 import { _MarketList, LendingProtocol } from "../../generated/schema";
 import {
@@ -16,22 +11,23 @@ import {
 } from "../sdk/constants";
 
 // TODO: add Morpho blue address here
-const MORPHO_BLUE_ADDRESS: { [key: string]: Address } = {
-  mainnet: Address.zero(),
-};
+const MORPHO_BLUE_ADDRESS = new Map<string, Address>();
+MORPHO_BLUE_ADDRESS.set("1", Address.zero());
 
 let protocol: LendingProtocol | null = null;
 export function getProtocol(): LendingProtocol {
-  if (protocol !== null) return protocol;
-  protocol = LendingProtocol.load(MORPHO_BLUE_ADDRESS[dataSource.network()]);
-  if (protocol) return protocol;
+  if (protocol !== null) return protocol!;
+  protocol = LendingProtocol.load(
+    MORPHO_BLUE_ADDRESS.get(dataSource.network())
+  );
+  if (protocol) return protocol!;
   protocol = initBlue();
-  return protocol;
+  return protocol!;
 }
 
 function initBlue(): LendingProtocol {
   const protocol = new LendingProtocol(
-    MORPHO_BLUE_ADDRESS[dataSource.network()] as Bytes
+    MORPHO_BLUE_ADDRESS.get(dataSource.network())
   );
   protocol.protocol = "Morpho";
   protocol.name = "Morpho Blue";

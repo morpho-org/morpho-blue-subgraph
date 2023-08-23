@@ -85,7 +85,7 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this._position;
+    return this._position!;
   }
   addSupplyPosition(event: ethereum.Event, sharesSupplied: BigInt): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
@@ -115,7 +115,7 @@ export class PositionManager {
       this._market.totalSupply
     );
     position.shares = position.shares
-      ? position.shares.plus(sharesSupplied)
+      ? position.shares!.plus(sharesSupplied)
       : sharesSupplied;
 
     const totalSupply = toAssetsDown(
@@ -126,7 +126,7 @@ export class PositionManager {
 
     position.balance = totalSupply;
     position.principal = position.principal
-      ? position.principal.plus(amountSupplied)
+      ? position.principal!.plus(amountSupplied)
       : amountSupplied;
     position.depositCount += INT_ONE;
     position.save();
@@ -136,7 +136,7 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this._position;
+    return this._position!;
   }
   addBorrowPosition(event: ethereum.Event, sharesBorrowed: BigInt): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
@@ -166,7 +166,7 @@ export class PositionManager {
       this._market.totalBorrow
     );
     position.shares = position.shares
-      ? position.shares.plus(sharesBorrowed)
+      ? position.shares!.plus(sharesBorrowed)
       : sharesBorrowed;
 
     const totalBorrow = toAssetsUp(
@@ -177,7 +177,7 @@ export class PositionManager {
 
     position.balance = totalBorrow;
     position.principal = position.principal
-      ? position.principal.plus(amountBorrowed)
+      ? position.principal!.plus(amountBorrowed)
       : amountBorrowed;
     position.borrowCount += INT_ONE;
     position.save();
@@ -187,7 +187,7 @@ export class PositionManager {
     // take position snapshot
     this._snapshotPosition(event);
     this._countDailyActivePosition(positionCounter, event);
-    return this._position;
+    return this._position!;
   }
 
   reduceCollateralPosition(

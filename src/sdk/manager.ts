@@ -15,7 +15,6 @@ import {
   InterestRate,
   LendingProtocol,
   Market,
-  Oracle,
   Repay,
   RevenueDetail,
   Withdraw,
@@ -39,13 +38,12 @@ import { SnapshotManager } from "./snapshots";
 import { TokenManager } from "./token";
 
 export class DataManager {
-  private _event!: ethereum.Event;
-  private _protocol!: LendingProtocol;
-  private _market!: Market;
-  private _inputToken!: TokenManager;
-  private _borrowedToken!: TokenManager;
-  private _oracle!: Oracle;
-  private _snapshots!: SnapshotManager;
+  private _event: ethereum.Event;
+  private _protocol: LendingProtocol;
+  private _market: Market;
+  private _inputToken: TokenManager;
+  private _borrowedToken: TokenManager;
+  private _snapshots: SnapshotManager;
 
   constructor(marketID: Bytes, event: ethereum.Event) {
     this._protocol = getProtocol();
@@ -60,11 +58,6 @@ export class DataManager {
 
     // load snapshots
     this._snapshots = new SnapshotManager(event, this._market);
-
-    // load oracle
-    if (this._market.oracle) {
-      this._oracle = Oracle.load(this._market.oracle!)!;
-    }
   }
 
   getOrUpdateRate(
