@@ -948,7 +948,7 @@ type Market @entity @regularPolling {
   totalSupply: BigInt!
   totalBorrow: BigInt!
 
-  accruedInterests: BigInt!
+  interest: BigInt!
   fee: BigInt!
 }
 
@@ -1958,4 +1958,24 @@ type _FlashLoanPremium @entity {
   premiumRateTotal: BigDecimal!
   " premium rate to protocol "
   premiumRateToProtocol: BigDecimal!
+}
+
+
+type _ChainlinkProxy  @entity {
+  id: Bytes!
+  proxy: Bytes!
+  isUSD: Boolean!
+  currentAggregator: _ChainlinkAggregator!
+  lastPrice: BigInt!
+  decimals: Int!
+  lastPriceBD: BigDecimal!
+  lastPriceUpdateTimestamp: BigInt!
+  lastPriceUpdateBlock: BigInt!
+}
+
+# The contract emitting price updates. Deprecated if the Proxy has a new aggregator associated with it.
+type _ChainlinkAggregator @entity {
+  id: Bytes!
+  proxy: _ChainlinkProxy!
+  isDeprecated: Boolean!
 }

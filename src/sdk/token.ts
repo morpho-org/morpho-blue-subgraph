@@ -26,10 +26,10 @@ import { exponentToBigDecimal } from "./constants";
  */
 
 export class TokenManager {
-  private INVALID_TOKEN_DECIMALS: i32 = 0;
-  private UNKNOWN_TOKEN_VALUE: string = "unknown";
+  private _INVALID_TOKEN_DECIMALS: i32 = 0;
+  private _UNKNOWN_TOKEN_VALUE: string = "unknown";
 
-  private token!: Token;
+  private _token!: Token;
   private event!: ethereum.Event;
 
   constructor(
@@ -51,30 +51,30 @@ export class TokenManager {
       _token.save();
     }
 
-    this.token = _token;
+    this._token = _token;
     this.event = event;
   }
 
   getToken(): Token {
-    return this.token;
+    return this._token;
   }
 
   getDecimals(): i32 {
-    return this.token.decimals;
+    return this._token.decimals;
   }
 
   _getName(): string {
-    return this.token.name;
+    return this._token.name;
   }
 
   updatePrice(): BigDecimal {
     // TODO: add Chainlink logic of collateral / borrowed conversion logic
-    return this.token.lastPriceUSD!;
+    return this._token.lastPriceUSD!;
   }
 
   getPriceUSD(): BigDecimal {
-    if (this.token.lastPriceUSD) {
-      return this.token.lastPriceUSD!;
+    if (this._token.lastPriceUSD) {
+      return this._token.lastPriceUSD!;
     }
     return BigDecimal.zero();
   }
@@ -95,7 +95,7 @@ export class TokenManager {
     const contractSymbolBytes = ERC20SymbolBytes.bind(tokenAddress);
 
     // try types string and bytes32 for symbol
-    let symbolValue = this.UNKNOWN_TOKEN_VALUE;
+    let symbolValue = this._UNKNOWN_TOKEN_VALUE;
     const symbolResult = contract.try_symbol();
     if (!symbolResult.reverted) {
       return symbolResult.value;
@@ -118,7 +118,7 @@ export class TokenManager {
     const contractNameBytes = ERC20NameBytes.bind(tokenAddress);
 
     // try types string and bytes32 for name
-    let nameValue = this.UNKNOWN_TOKEN_VALUE;
+    let nameValue = this._UNKNOWN_TOKEN_VALUE;
     const nameResult = contract.try_name();
     if (!nameResult.reverted) {
       return nameResult.value;
@@ -145,7 +145,7 @@ export class TokenManager {
       const decimalValue = decimalResult.value;
       return decimalValue;
     }
-    return this.INVALID_TOKEN_DECIMALS as i32;
+    return this._INVALID_TOKEN_DECIMALS as i32;
   }
 
   private isNullEthValue(value: string): boolean {

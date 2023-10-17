@@ -7,7 +7,7 @@ import {
   log,
 } from "@graphprotocol/graph-ts";
 
-import { CreateMarketMarketStruct } from "../../generated/MorphoBlue/MorphoBlue";
+import { CreateMarketMarketParamsStruct } from "../../generated/MorphoBlue/MorphoBlue";
 import { _MarketList, Market, Oracle } from "../../generated/schema";
 import {
   BIGDECIMAL_ONE,
@@ -23,7 +23,7 @@ import { getProtocol } from "./protocol";
 
 export function createMarket(
   id: Bytes,
-  marketStruct: CreateMarketMarketStruct | null,
+  marketStruct: CreateMarketMarketParamsStruct | null,
   event: ethereum.Event
 ): Market {
   const market = new Market(id);
@@ -32,16 +32,14 @@ export function createMarket(
     marketStruct ? marketStruct.collateralToken : Address.zero(),
     event
   );
-  const borrowableToken = new TokenManager(
-    marketStruct ? marketStruct.borrowableToken : Address.zero(),
+  const loanToken = new TokenManager(
+    marketStruct ? marketStruct.loanToken : Address.zero(),
     event
   );
 
   market.protocol = getProtocol().id;
   market.name =
-    borrowableToken.getToken().symbol +
-    " / " +
-    collateralToken.getToken().symbol;
+    loanToken.getToken().symbol + " / " + collateralToken.getToken().symbol;
   market.isActive = true;
   market.canBorrowFrom = true;
   market.canUseAsCollateral = true;
@@ -62,14 +60,14 @@ export function createMarket(
   market.createdTimestamp = event.block.timestamp;
   market.createdBlockNumber = event.block.number;
 
-  market.inputToken = borrowableToken.getToken().id;
+  market.inputToken = loanToken.getToken().id;
   market.inputTokenBalance = BigInt.zero();
-  market.inputTokenPriceUSD = borrowableToken.getPriceUSD();
+  market.inputTokenPriceUSD = loanToken.getPriceUSD();
   market.rates = []; // TODO: to define
   market.reserves = BigDecimal.zero();
   market.reserveFactor = BigDecimal.zero();
 
-  market.borrowedToken = borrowableToken.getToken().id;
+  market.borrowedToken = loanToken.getToken().id;
   market.variableBorrowedTokenBalance = BigInt.zero();
 
   // TODO: use indexes here
@@ -115,7 +113,7 @@ export function createMarket(
   market.totalCollateral = BigInt.zero();
   market.totalSupply = BigInt.zero();
   market.totalBorrow = BigInt.zero();
-  market.accruedInterests = BigInt.zero();
+  market.interest = BigInt.zero();
   market.fee = BigInt.zero();
 
   market.save();
@@ -126,7 +124,7 @@ export function createMarket(
     oracle.blockCreated = event.block.number;
     oracle.timestampCreated = event.block.timestamp;
     oracle.isActive = true;
-    const isUsd = !!borrowableToken.getToken().symbol.includes("USD");
+    const isUsd = !!loanToken.getToken().symbol.includes("USD");
     oracle.isUSD = isUsd;
     // TODO: whitelist oracleSource for a list of oracles.
     oracle.save();

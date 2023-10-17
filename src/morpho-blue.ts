@@ -1,7 +1,7 @@
 import { BigInt, log } from "@graphprotocol/graph-ts";
 
 import {
-  AccrueInterests,
+  AccrueInterest,
   Borrow,
   CreateMarket,
   EnableIrm,
@@ -29,20 +29,15 @@ import { DataManager } from "./sdk/manager";
 import { PositionManager } from "./sdk/position";
 import { TokenManager } from "./sdk/token";
 
-export function handleAccrueInterests(event: AccrueInterests): void {
+export function handleAccrueInterest(event: AccrueInterest): void {
   const market = getMarket(event.params.id);
-  market.accruedInterests = market.accruedInterests.plus(
-    event.params.accruedInterests
-  );
-  market.totalSupply = market.totalSupply.plus(event.params.accruedInterests);
-  market.totalBorrow = market.totalBorrow.plus(event.params.accruedInterests);
+  market.interest = market.interest.plus(event.params.interest);
+  market.totalSupply = market.totalSupply.plus(event.params.interest);
+  market.totalBorrow = market.totalBorrow.plus(event.params.interest);
   market.variableBorrowedTokenBalance = market.totalBorrow;
   market.inputTokenBalance = market.totalSupply;
   market.totalSupplyShares = market.totalSupplyShares.plus(
     event.params.feeShares
-  );
-  market.accruedInterests = market.accruedInterests.plus(
-    event.params.accruedInterests
   );
 
   if (event.params.feeShares.gt(BigInt.zero())) {
@@ -101,7 +96,7 @@ export function handleBorrow(event: Borrow): void {
 export function handleCreateMarket(event: CreateMarket): void {
   log.info("Handle new market created: {}", [event.params.id.toHexString()]);
 
-  createMarket(event.params.id, event.params.market, event);
+  createMarket(event.params.id, event.params.marketParams, event);
 }
 
 export function handleEnableIrm(event: EnableIrm): void {
@@ -142,7 +137,9 @@ export function handleIncrementNonce(event: IncrementNonce): void {}
 export function handleLiquidate(event: Liquidate): void {
   const market = getMarket(event.params.id);
 
-  market.totalCollateral = market.totalCollateral.minus(event.params.seized);
+  market.totalCollateral = market.totalCollateral.minus(
+    event.params.seizedAssets
+  );
   market.save();
 
   const liquidatorAccount = new AccountManager(
@@ -175,9 +172,9 @@ export function handleLiquidate(event: Liquidate): void {
     PositionSide.COLLATERAL
   );
 
-  collateralPosition.reduceCollateralPosition(event, event.params.seized);
+  collateralPosition.reduceCollateralPosition(event, event.params.seizedAssets);
 
-  market.totalBorrow = market.totalBorrow.minus(event.params.repaid);
+  market.totalBorrow = market.totalBorrow.minus(event.params.repaidAssets);
   market.totalBorrowShares = market.totalBorrowShares.minus(
     event.params.repaidShares // we remove the bad debt shares after having computed the bad debt in assets
   );
@@ -225,14 +222,14 @@ export function handleSetAuthorization(event: SetAuthorization): void {}
 
 export function handleSetFee(event: SetFee): void {
   const market = getMarket(event.params.id);
-  market.fee = event.params.fee;
-  market.reserveFactor = event.params.fee.toBigDecimal().div(BIGDECIMAL_WAD);
+  market.fee = event.params.newFee;
+  market.reserveFactor = event.params.newFee.toBigDecimal().div(BIGDECIMAL_WAD);
   market.save();
 }
 
 export function handleSetFeeRecipient(event: SetFeeRecipient): void {
   const protocol = getProtocol();
-  protocol.feeRecipient = event.params.feeRecipient;
+  protocol.feeRecipient = event.params.newFeeRecipient;
   protocol.save();
 }
 

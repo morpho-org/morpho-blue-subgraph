@@ -4,17 +4,17 @@ schema:
 dataSources:
   - kind: ethereum
     name: MorphoBlue
-    network: mainnet
+    network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xC850a9C14454131aE82C28DC7ff51c2dc6ace06e"
       abi: MorphoBlue
-      startBlock: 0
+      startBlock: 9767646
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - AccrueInterests
+        - AccrueInterest
         - Borrow
         - CreateMarket
         - EnableIrm
@@ -46,8 +46,8 @@ dataSources:
           file: ./abis/Oracle.json
 
       eventHandlers:
-        - event: AccrueInterests(indexed bytes32,uint256,uint256,uint256)
-          handler: handleAccrueInterests
+        - event: AccrueInterest(indexed bytes32,uint256,uint256,uint256)
+          handler: handleAccrueInterest
         - event: Borrow(indexed bytes32,address,indexed address,indexed address,uint256,uint256)
           handler: handleBorrow
         - event: CreateMarket(indexed bytes32,(address,address,address,address,uint256))
@@ -84,7 +84,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: ChainlinkAggregatorProxy
-    network: mainnet
+    network: goerli
     source:
       abi: ChainlinkAggregatorProxy
     mapping:
@@ -110,7 +110,7 @@ templates:
       file: ./src/chainlink.ts
   - kind: ethereum
     name: ChainlinkPriceFeed
-    network: mainnet
+    network: goerli
     source:
       abi: ChainlinkPriceFeed
     mapping:
