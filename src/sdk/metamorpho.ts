@@ -3,7 +3,7 @@ export namespace PendingValueStatus {
   export const ACCEPTED = "ACCEPTED";
   export const REJECTED = "REJECTED";
 
-  export const OVERRIDED = "OVERRIDED";
+  export const OVERRIDDEN = "OVERRIDDEN";
 }
 
 export namespace QueueType {

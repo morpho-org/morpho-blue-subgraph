@@ -225,7 +225,7 @@ export function handleSetCap(event: SetCapEvent): void {
     }
     pendingCap.status = pendingCap.cap.equals(event.params.cap)
       ? PendingValueStatus.ACCEPTED
-      : PendingValueStatus.OVERRIDED;
+      : PendingValueStatus.OVERRIDDEN;
 
     mmMarket.currentPendingCap = null;
     pendingCap.save();
@@ -272,7 +272,7 @@ export function handleSetGuardian(event: SetGuardianEvent): void {
       event.params.guardian
     )
       ? PendingValueStatus.ACCEPTED
-      : PendingValueStatus.OVERRIDED;
+      : PendingValueStatus.OVERRIDDEN;
     pendingGuardian.save();
     mm.currentPendingGuardian = null;
   }
@@ -348,7 +348,7 @@ export function handleSetTimelock(event: SetTimelockEvent): void {
       event.params.newTimelock
     )
       ? PendingValueStatus.ACCEPTED
-      : PendingValueStatus.OVERRIDED;
+      : PendingValueStatus.OVERRIDDEN;
 
     pendingTimelock.save();
     mm.currentPendingTimelock = null;

@@ -2054,7 +2054,7 @@ enum PendingValueStatus {
     PENDING
     ACCEPTED
     REJECTED
-    OVERRIDED
+    OVERRIDDEN
 }
 
 type PendingTimelock @entity {
