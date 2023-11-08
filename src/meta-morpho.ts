@@ -165,11 +165,36 @@ export function handleSetRewardsRecipient(
   event: SetRewardsRecipientEvent
 ): void {}
 
-export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {}
+export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
+  // Supply queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
+  const mm = loadMetaMorpho(event.address);
+  const newSupplyQueue = [];
+  for (let i = 0; i < event.params.newSupplyQueue.length; i++) {
+    const mmMarket = loadMetaMorphoMarket(
+      event.address,
+      event.params.newSupplyQueue[i]
+    );
+    newSupplyQueue.push(mmMarket.id);
+  }
+  // TODO: log previous supply queue and current one in a dedicated entity
+  mm.supplyQueue = newSupplyQueue;
+  mm.save();
+}
 
 export function handleSetTimelock(event: SetTimelockEvent): void {}
 
-export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {}
+export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
+  // Withdraw queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
+  const mm = loadMetaMorpho(event.address);
+  const newWithdrawQueue = [];
+  for (let i = 0; i < event.params.newWithdrawQueue.length; i++) {
+    const mmMarket = loadMetaMorphoMarket(
+      event.address,
+      event.params.newWithdrawQueue[i]
+    );
+    newWithdrawQueue.push(mmMarket.id);
+  }
+}
 
 export function handleSubmitCap(event: SubmitCapEvent): void {
   const mm = loadMetaMorpho(event.address);
