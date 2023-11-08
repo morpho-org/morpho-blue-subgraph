@@ -4,6 +4,7 @@ import {
   MetaMorpho,
   MetaMorphoMarket,
   PendingCap,
+  PendingGuardian,
   PendingTimelock,
 } from "../generated/schema";
 import {
@@ -131,7 +132,27 @@ export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
 
 export function handleRevokePendingGuardian(
   event: RevokePendingGuardianEvent
-): void {}
+): void {
+  const mm = loadMetaMorpho(event.address);
+  if (!mm.currentPendingGuardian) {
+    log.critical("MetaMorpho {} has no pending guardian", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian);
+  if (!pendingGuardian) {
+    log.critical("PendingGuardian {} not found", [
+      mm.currentPendingGuardian.toHexString(),
+    ]);
+    return;
+  }
+  pendingGuardian.status = PendingValueStatus.REJECTED;
+  pendingGuardian.save();
+
+  mm.currentPendingGuardian = null;
+  mm.save();
+}
 
 export function handleRevokePendingTimelock(
   event: RevokePendingTimelockEvent
@@ -172,7 +193,21 @@ export function handleSetCap(event: SetCapEvent): void {
   }
 
   mmMarket.cap = event.params.cap;
-  mmMarket.currentPendingCap = null;
+  if (mmMarket.currentPendingCap) {
+    const pendingCap = PendingCap.load(mmMarket.currentPendingCap);
+    if (!pendingCap) {
+      log.critical("PendingCap {} not found", [
+        mmMarket.currentPendingCap.toHexString(),
+      ]);
+      return;
+    }
+    pendingCap.status = pendingCap.cap.equals(event.params.cap)
+      ? PendingValueStatus.ACCEPTED
+      : PendingValueStatus.OVERRIDED;
+
+    mmMarket.currentPendingCap = null;
+    pendingCap.save();
+  }
   mmMarket.save();
 }
 
@@ -182,7 +217,27 @@ export function handleSetFee(event: SetFeeEvent): void {}
 
 export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {}
 
-export function handleSetGuardian(event: SetGuardianEvent): void {}
+export function handleSetGuardian(event: SetGuardianEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  if (mm.currentPendingGuardian) {
+    const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian);
+    if (!pendingGuardian) {
+      log.critical("PendingGuardian {} not found", [
+        mm.currentPendingGuardian.toHexString(),
+      ]);
+      return;
+    }
+    pendingGuardian.status = pendingGuardian.guardian.equals(
+      event.params.guardian
+    )
+      ? PendingValueStatus.ACCEPTED
+      : PendingValueStatus.OVERRIDED;
+    pendingGuardian.save();
+    mm.currentPendingGuardian = null;
+  }
+  mm.guardian = event.params.guardian;
+  mm.save();
+}
 
 export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {}
 
@@ -216,7 +271,12 @@ export function handleSetTimelock(event: SetTimelockEvent): void {
       ]);
       return;
     }
-    pendingTimelock.status = PendingValueStatus.ACCEPTED;
+    pendingTimelock.status = pendingTimelock.timelock.equals(
+      event.params.newTimelock
+    )
+      ? PendingValueStatus.ACCEPTED
+      : PendingValueStatus.OVERRIDED;
+
     pendingTimelock.save();
     mm.currentPendingTimelock = null;
   }
@@ -277,7 +337,30 @@ export function handleSubmitFee(event: SubmitFeeEvent): void {
   // Fee submission is no longer subject to a timelock, will be removed in last update.
 }
 
-export function handleSubmitGuardian(event: SubmitGuardianEvent): void {}
+export function handleSubmitGuardian(event: SubmitGuardianEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  if (mm.currentPendingGuardian) {
+    log.critical("MetaMorpho {} already has a pending guardian", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const id = event.address
+    .concat(Bytes.fromHexString(event.block.timestamp.toHexString()))
+    .concat(Bytes.fromI32(event.logIndex.toI32()))
+    .concat(Bytes.fromI32(event.transactionLogIndex.toI32()));
+
+  const pendingGuardian = new PendingGuardian(id);
+  pendingGuardian.metaMorpho = mm.id;
+  pendingGuardian.guardian = event.params.newGuardian;
+  pendingGuardian.submittedAt = event.block.timestamp;
+  pendingGuardian.validAt = event.block.timestamp.plus(mm.timelock);
+  pendingGuardian.status = PendingValueStatus.PENDING;
+  pendingGuardian.save();
+
+  mm.currentPendingGuardian = pendingGuardian.id;
+  mm.save();
+}
 
 export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
   const mm = loadMetaMorpho(event.address);

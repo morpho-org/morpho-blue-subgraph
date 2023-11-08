@@ -2043,6 +2043,7 @@ enum PendingValueStatus {
     PENDING
     ACCEPTED
     REJECTED
+    OVERRIDED
 }
 
 type PendingTimelock @entity {
@@ -2067,7 +2068,9 @@ type PendingCap @entity {
 
 type PendingGuardian @entity {
   id: Bytes!
-  guardian: BigInt!
+  guardian: Bytes!
   metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
   validAt: BigInt!
+  status: PendingValueStatus!
 }
