@@ -2039,16 +2039,19 @@ type MetaMorphoMarket @entity {
 #  TODO: add position
 }
 
-type PendingTimelock @entity {
-  id: Bytes!
-  timelock: BigInt!
-  metaMorpho: MetaMorpho!
-}
-
 enum PendingValueStatus {
     PENDING
     ACCEPTED
     REJECTED
+}
+
+type PendingTimelock @entity {
+  id: Bytes!
+  timelock: BigInt!
+  metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
+  validAt: BigInt!
+  status: PendingValueStatus!
 }
 
 type PendingCap @entity {

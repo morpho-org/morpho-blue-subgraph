@@ -1,6 +1,11 @@
 import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
-import { MetaMorpho, MetaMorphoMarket, PendingCap } from "../generated/schema";
+import {
+  MetaMorpho,
+  MetaMorphoMarket,
+  PendingCap,
+  PendingTimelock,
+} from "../generated/schema";
 import {
   AccrueFee as AccrueFeeEvent,
   Approval as ApprovalEvent,
@@ -130,7 +135,27 @@ export function handleRevokePendingGuardian(
 
 export function handleRevokePendingTimelock(
   event: RevokePendingTimelockEvent
-): void {}
+): void {
+  const mm = loadMetaMorpho(event.address);
+  if (!mm.currentPendingTimelock) {
+    log.critical("MetaMorpho {} has no pending timelock", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock);
+  if (!pendingTimelock) {
+    log.critical("PendingTimelock {} not found", [
+      mm.currentPendingTimelock.toHexString(),
+    ]);
+    return;
+  }
+  pendingTimelock.status = PendingValueStatus.REJECTED;
+  pendingTimelock.save();
+
+  mm.currentPendingTimelock = null;
+  mm.save();
+}
 
 export function handleSetCap(event: SetCapEvent): void {
   const mm = loadMetaMorpho(event.address);
@@ -181,7 +206,23 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   mm.save();
 }
 
-export function handleSetTimelock(event: SetTimelockEvent): void {}
+export function handleSetTimelock(event: SetTimelockEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  if (mm.currentPendingTimelock) {
+    const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock);
+    if (!pendingTimelock) {
+      log.critical("PendingTimelock {} not found", [
+        mm.currentPendingTimelock.toHexString(),
+      ]);
+      return;
+    }
+    pendingTimelock.status = PendingValueStatus.ACCEPTED;
+    pendingTimelock.save();
+    mm.currentPendingTimelock = null;
+  }
+  mm.timelock = event.params.newTimelock;
+  mm.save();
+}
 
 export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
   // Withdraw queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
@@ -230,11 +271,36 @@ export function handleSubmitCap(event: SubmitCapEvent): void {
   metaMorphoMarket.save();
 }
 
-export function handleSubmitFee(event: SubmitFeeEvent): void {}
+export function handleSubmitFee(event: SubmitFeeEvent): void {
+  // Fee submission is no longer subject to a timelock, will be removed in last update.
+}
 
 export function handleSubmitGuardian(event: SubmitGuardianEvent): void {}
 
-export function handleSubmitTimelock(event: SubmitTimelockEvent): void {}
+export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  if (mm.pendingTimelock) {
+    log.critical("MetaMorpho {} already has a pending timelock", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const pendingTimelock = new PendingTimelock(
+    event.address
+      .concat(Bytes.fromI32(event.block.timestamp.toI32()))
+      .concat(Bytes.fromI32(event.logIndex.toI32()))
+      .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
+  );
+  pendingTimelock.timelock = event.params.newTimelock;
+  pendingTimelock.metaMorpho = mm.id;
+  pendingTimelock.submittedAt = event.block.timestamp;
+  pendingTimelock.validAt = event.block.timestamp.plus(mm.timelock);
+  pendingTimelock.status = PendingValueStatus.PENDING;
+  pendingTimelock.save();
+
+  mm.currentPendingTimelock = pendingTimelock.id;
+  mm.save();
+}
 
 export function handleTransfer(event: TransferEvent): void {}
 
