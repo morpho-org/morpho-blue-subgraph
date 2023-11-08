@@ -1991,6 +1991,8 @@ type _ChainlinkAggregator @entity {
   isDeprecated: Boolean!
 }
 
+########### METAMORPHO ENTITIES ############
+
 
 type MetaMorpho @entity {
   id: Bytes!

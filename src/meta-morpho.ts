@@ -195,20 +195,20 @@ export function handleSetCap(event: SetCapEvent): void {
   const mm = loadMetaMorpho(event.address);
   const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
 
-  if (
-    event.params.cap.gt(BigInt.zero()) &&
-    mmMarket.withdrawRank === BigInt.zero()
-  ) {
+  if (event.params.cap.gt(BigInt.zero()) && !mmMarket.isInWithdrawQueue) {
     const supplyQueue = mm.supplyQueue;
     supplyQueue.push(mmMarket.id);
     const withdrawQueue = mm.withdrawQueue;
     withdrawQueue.push(mmMarket.id);
+
     mm.supplyQueue = supplyQueue;
     mm.withdrawQueue = withdrawQueue;
+
     mm.save();
     mmMarket.withdrawRank = BigInt.fromI32(mm.withdrawQueue.length);
     mmMarket.isInSupplyQueue = true;
     mmMarket.isInWithdrawQueue = true;
+    mmMarket.save();
   }
 
   mmMarket.cap = event.params.cap;
@@ -224,8 +224,8 @@ export function handleSetCap(event: SetCapEvent): void {
       ? PendingValueStatus.ACCEPTED
       : PendingValueStatus.OVERRIDDEN;
 
-    mmMarket.currentPendingCap = null;
     pendingCap.save();
+    mmMarket.currentPendingCap = null;
   }
   mmMarket.save();
 }
@@ -404,7 +404,6 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
 
 export function handleSubmitCap(event: SubmitCapEvent): void {
   const mm = loadMetaMorpho(event.address);
-  log.critical("SUBMIT CAP", []);
   const id = event.address
     .concat(event.params.id)
     .concat(Bytes.fromHexString(event.block.timestamp.toHexString()))
