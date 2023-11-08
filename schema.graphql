@@ -2003,12 +2003,12 @@ type MetaMorpho @entity {
   owner: Account!
   curators: [Account!]!
   allocators: [Account!]!
-  guardian: Account!
+  guardian: Account
 
   timelock: BigInt!
 
   fee: BigInt!
-  feeRecipient: Account!
+  feeRecipient: FeeRecipient
   feeAccrued: BigInt!
   feeAccruedAssets: BigInt!
 
@@ -2026,6 +2026,15 @@ type MetaMorpho @entity {
 
   pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorpho")
 
+  markets: [MetaMorphoMarket!]! @derivedFrom(field: "metaMorpho")
+
+}
+type FeeRecipient @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  feeAccrued: BigInt!
+  feeAccruedAssets: BigInt!
 }
 
 type MetaMorphoMarket @entity {
