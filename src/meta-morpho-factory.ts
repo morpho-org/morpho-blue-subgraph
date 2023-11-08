@@ -19,7 +19,6 @@ export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
   metaMorpho.owner = new AccountManager(
     event.params.initialOwner
   ).getAccount().id;
-  metaMorpho.curators = [];
   metaMorpho.allocators = [];
 
   metaMorpho.timelock = event.params.initialTimelock;
