@@ -2001,7 +2001,7 @@ type MetaMorpho @entity {
   asset: Token!
 
   owner: Account!
-  curators: [Account!]!
+  curator: Account
   allocators: [Account!]!
   guardian: Account
 

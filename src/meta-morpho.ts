@@ -16,12 +16,6 @@ import {
   EIP712DomainChanged as EIP712DomainChangedEvent,
   OwnershipTransferStarted as OwnershipTransferStartedEvent,
   OwnershipTransferred as OwnershipTransferredEvent,
-  ReallocateIdle as ReallocateIdleEvent,
-  ReallocateSupply as ReallocateSupplyEvent,
-  ReallocateWithdraw as ReallocateWithdrawEvent,
-  RevokePendingCap as RevokePendingCapEvent,
-  RevokePendingGuardian as RevokePendingGuardianEvent,
-  RevokePendingTimelock as RevokePendingTimelockEvent,
   SetCap as SetCapEvent,
   SetCurator as SetCuratorEvent,
   SetFee as SetFeeEvent,
@@ -40,6 +34,9 @@ import {
   TransferRewards as TransferRewardsEvent,
   UpdateLastTotalAssets as UpdateLastTotalAssetsEvent,
   Withdraw as WithdrawEvent,
+  RevokeCap,
+  RevokeGuardian,
+  RevokeTimelock,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
 import { toAssetsDown } from "./maths/shares";
@@ -117,16 +114,16 @@ export function handleOwnershipTransferred(
   mm.owner = event.params.newOwner;
   mm.save();
 }
+//
+// export function handleReallocateIdle(event: ReallocateIdleEvent): void {}
+//
+// export function handleReallocateSupply(event: ReallocateSupplyEvent): void {}
+//
+// export function handleReallocateWithdraw(
+//   event: ReallocateWithdrawEvent
+// ): void {}
 
-export function handleReallocateIdle(event: ReallocateIdleEvent): void {}
-
-export function handleReallocateSupply(event: ReallocateSupplyEvent): void {}
-
-export function handleReallocateWithdraw(
-  event: ReallocateWithdrawEvent
-): void {}
-
-export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
+export function handleRevokePendingCap(event: RevokeCap): void {
   const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
 
   if (!mmMarket.currentPendingCap) {
@@ -150,9 +147,7 @@ export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
   mmMarket.save();
 }
 
-export function handleRevokePendingGuardian(
-  event: RevokePendingGuardianEvent
-): void {
+export function handleRevokePendingGuardian(event: RevokeGuardian): void {
   const mm = loadMetaMorpho(event.address);
   if (!mm.currentPendingGuardian) {
     log.critical("MetaMorpho {} has no pending guardian", [
@@ -174,9 +169,7 @@ export function handleRevokePendingGuardian(
   mm.save();
 }
 
-export function handleRevokePendingTimelock(
-  event: RevokePendingTimelockEvent
-): void {
+export function handleRevokePendingTimelock(event: RevokeTimelock): void {
   const mm = loadMetaMorpho(event.address);
   if (!mm.currentPendingTimelock) {
     log.critical("MetaMorpho {} has no pending timelock", [
@@ -206,8 +199,12 @@ export function handleSetCap(event: SetCapEvent): void {
     event.params.cap.gt(BigInt.zero()) &&
     mmMarket.withdrawRank === BigInt.zero()
   ) {
-    mm.supplyQueue = mm.supplyQueue.concat([mmMarket.id]);
-    mm.withdrawQueue = mm.withdrawQueue.concat([mmMarket.id]);
+    const supplyQueue = mm.supplyQueue;
+    supplyQueue.push(mmMarket.id);
+    const withdrawQueue = mm.withdrawQueue;
+    withdrawQueue.push(mmMarket.id);
+    mm.supplyQueue = supplyQueue;
+    mm.withdrawQueue = withdrawQueue;
     mm.save();
     mmMarket.withdrawRank = BigInt.fromI32(mm.withdrawQueue.length);
     mmMarket.isInSupplyQueue = true;
@@ -321,7 +318,8 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
       .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
   );
   newQueue.queueType = QueueType.SUPPLY_QUEUE;
-  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
+  // TODO: add caller once redeployed
+  newQueue.caller = new AccountManager(Address.zero()).getAccount().id;
   newQueue.metaMorpho = mm.id;
   newQueue.submittedAt = event.block.timestamp;
   newQueue.removedMarkets = removedMarkets;
@@ -390,7 +388,8 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
       .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
   );
   newQueue.queueType = QueueType.WITHDRAW_QUEUE;
-  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
+  // TODO: add caller once redeployed
+  newQueue.caller = new AccountManager(Address.zero()).getAccount().id;
   newQueue.metaMorpho = mm.id;
   newQueue.submittedAt = event.block.timestamp;
   newQueue.removedMarkets = removedMarkets;
@@ -405,6 +404,7 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
 
 export function handleSubmitCap(event: SubmitCapEvent): void {
   const mm = loadMetaMorpho(event.address);
+  log.critical("SUBMIT CAP", []);
   const id = event.address
     .concat(event.params.id)
     .concat(Bytes.fromHexString(event.block.timestamp.toHexString()))
@@ -501,6 +501,14 @@ export function handleTransferRewards(event: TransferRewardsEvent): void {}
 
 export function handleUpdateLastTotalAssets(
   event: UpdateLastTotalAssetsEvent
-): void {}
+): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.lastTotalAssets = event.params.newTotalAssets;
+  mm.save();
+}
 
-export function handleWithdraw(event: WithdrawEvent): void {}
+export function handleWithdraw(event: WithdrawEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.totalShares = mm.totalShares.minus(event.params.shares);
+  mm.save();
+}

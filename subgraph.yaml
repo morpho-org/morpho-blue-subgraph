@@ -163,27 +163,27 @@ templates:
           handler: handleOwnershipTransferStarted
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
-        - event: ReallocateIdle(indexed address,uint256)
-          handler: handleReallocateIdle
-        - event: ReallocateSupply(indexed address,indexed bytes32,uint256,uint256)
-          handler: handleReallocateSupply
-        - event: ReallocateWithdraw(indexed address,indexed bytes32,uint256,uint256)
-          handler: handleReallocateWithdraw
-        - event: RevokePendingCap(indexed address,indexed bytes32)
+#        - event: ReallocateIdle(indexed address,uint256)
+#          handler: handleReallocateIdle
+#        - event: ReallocateSupply(indexed address,indexed bytes32,uint256,uint256)
+#          handler: handleReallocateSupply
+#        - event: ReallocateWithdraw(indexed address,indexed bytes32,uint256,uint256)
+#          handler: handleReallocateWithdraw
+        - event: RevokeCap(indexed address,indexed bytes32,(uint192,uint64))
           handler: handleRevokePendingCap
-        - event: RevokePendingGuardian(indexed address)
+        - event: RevokeGuardian(indexed address,(address,uint96))
           handler: handleRevokePendingGuardian
-        - event: RevokePendingTimelock(indexed address)
+        - event: RevokeTimelock(indexed address,(uint192,uint64))
           handler: handleRevokePendingTimelock
-        - event: SetCap(indexed address,indexed bytes32,uint256)
+        - event: SetCap(indexed bytes32,uint256)
           handler: handleSetCap
         - event: SetCurator(indexed address)
           handler: handleSetCurator
-        - event: SetFee(indexed address,uint256)
+        - event: SetFee(uint256)
           handler: handleSetFee
         - event: SetFeeRecipient(indexed address)
           handler: handleSetFeeRecipient
-        - event: SetGuardian(indexed address,indexed address)
+        - event: SetGuardian(indexed address)
           handler: handleSetGuardian
         - event: SetIsAllocator(indexed address,bool)
           handler: handleSetIsAllocator
@@ -191,11 +191,11 @@ templates:
           handler: handleSetRewardsRecipient
         - event: SetSupplyQueue(indexed address,bytes32[])
           handler: handleSetSupplyQueue
-        - event: SetTimelock(indexed address,uint256)
+        - event: SetTimelock(uint256)
           handler: handleSetTimelock
         - event: SetWithdrawQueue(indexed address,bytes32[])
           handler: handleSetWithdrawQueue
-        - event: SubmitCap(indexed address,indexed bytes32,uint256)
+        - event: SubmitCap(indexed bytes32,uint256)
           handler: handleSubmitCap
         - event: SubmitFee(uint256)
           handler: handleSubmitFee
@@ -205,7 +205,7 @@ templates:
           handler: handleSubmitTimelock
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
-        - event: TransferRewards(indexed address,indexed address,uint256)
+        - event: TransferRewards(indexed address,indexed address,indexed address,uint256)
           handler: handleTransferRewards
         - event: UpdateLastTotalAssets(uint256)
           handler: handleUpdateLastTotalAssets
