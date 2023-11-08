@@ -69,7 +69,7 @@ export class TokenManager {
 
   updatePrice(): BigDecimal {
     // TODO: add Chainlink logic of collateral / borrowed conversion logic
-    return this._token.lastPriceUSD!;
+    return BigDecimal.fromString("0");
   }
 
   getPriceUSD(): BigDecimal {

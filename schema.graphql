@@ -24,6 +24,7 @@ enum Network {
   OSMOSIS
   MATIC # aka Polygon
   GNOSIS
+  goerli
 }
 
 enum ProtocolType {
@@ -139,6 +140,9 @@ enum Tranche {
 enum PositionSide {
   " Position opened as a lender (used as collateral) "
   COLLATERAL
+
+  " Position opened as a pure lender (not used as collateral)"
+  SUPPLIER
 
   " Position opened as a borrower "
   BORROWER
@@ -1438,6 +1442,7 @@ type Position @entity @regularPolling {
 
   ##### Addons #####
 
+  "null for collateral positions"
   shares: BigInt
 
   depositCollateralCount: Int!

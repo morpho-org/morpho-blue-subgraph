@@ -12,7 +12,10 @@ import {
 
 // TODO: add Morpho blue address here
 const MORPHO_BLUE_ADDRESS = new Map<string, Address>();
-MORPHO_BLUE_ADDRESS.set("1", Address.zero());
+MORPHO_BLUE_ADDRESS.set(
+  "goerli",
+  Address.fromString("0xC850a9C14454131aE82C28DC7ff51c2dc6ace06e")
+);
 
 let protocol: LendingProtocol | null = null;
 export function getProtocol(): LendingProtocol {
@@ -68,6 +71,7 @@ function initBlue(): LendingProtocol {
   protocol.repayCount = INT_ZERO;
   protocol.transferCount = INT_ZERO;
   protocol.flashloanCount = INT_ZERO;
+  protocol.liquidationCount = INT_ZERO;
 
   protocol.feeRecipient = Address.zero();
   protocol.owner = Address.zero();
@@ -76,6 +80,7 @@ function initBlue(): LendingProtocol {
 
   protocol.save();
   const marketList = new _MarketList(protocol.id);
+  marketList.markets = [];
   marketList.save();
 
   return protocol;

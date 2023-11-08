@@ -12,12 +12,11 @@ import { toAssetsDown, toAssetsUp } from "../maths/shares";
 
 import {
   exponentToBigDecimal,
-  INT_ONE,
   INT_ZERO,
+  PositionSide,
   SECONDS_PER_DAY,
   TransactionType,
 } from "./constants";
-import { PositionSide } from "./constants";
 import { SnapshotManager } from "./snapshots";
 import { TokenManager } from "./token";
 
@@ -75,8 +74,8 @@ export class PositionManager {
 
     position.balance = position.balance.plus(amountSupplied);
     position.principal = position.balance;
-    position.depositCollateralCount += INT_ONE;
-    position.depositCount += INT_ONE;
+    position.depositCollateralCount += 1;
+    position.depositCount += 1;
 
     position.save();
 
@@ -128,7 +127,7 @@ export class PositionManager {
     position.principal = position.principal
       ? position.principal!.plus(amountSupplied)
       : amountSupplied;
-    position.depositCount += INT_ONE;
+    position.depositCount += 1;
     position.save();
 
     this._position = position;
@@ -179,7 +178,7 @@ export class PositionManager {
     position.principal = position.principal
       ? position.principal!.plus(amountBorrowed)
       : amountBorrowed;
-    position.borrowCount += INT_ONE;
+    position.borrowCount += 1;
     position.save();
 
     this._position = position;
@@ -216,8 +215,8 @@ export class PositionManager {
 
     position.balance = position.balance.minus(amountWithdrawn);
     position.principal = position.balance;
-    position.withdrawCount += INT_ONE;
-    position.withdrawCollateralCount += INT_ONE;
+    position.withdrawCount += 1;
+    position.withdrawCollateralCount += 1;
     this._position = position;
     if (position.balance.equals(BigInt.zero())) {
       this._closePosition(position, event);
@@ -265,7 +264,7 @@ export class PositionManager {
 
     position.balance = totalBorrow;
     position.principal = position.principal!.minus(amountRepaid);
-    position.repayCount += INT_ONE;
+    position.repayCount += 1;
     this._position = position;
     if (position.shares!.equals(BigInt.zero())) {
       this._closePosition(position, event);
@@ -317,7 +316,7 @@ export class PositionManager {
 
     position.balance = totalSupply;
     position.principal = position.principal!.minus(amountWithdrawn);
-    position.withdrawCount += INT_ONE;
+    position.withdrawCount += 1;
     this._position = position;
     if (position.shares!.equals(BigInt.zero())) {
       this._closePosition(position, event);
@@ -406,6 +405,7 @@ export class PositionManager {
     position.side = this._side;
     position.depositCount = INT_ZERO;
     position.depositCollateralCount = INT_ZERO;
+    position.withdrawCollateralCount = INT_ZERO;
     position.withdrawCount = INT_ZERO;
     position.borrowCount = INT_ZERO;
     position.repayCount = INT_ZERO;
@@ -415,9 +415,11 @@ export class PositionManager {
 
     if (transactionType == TransactionType.DEPOSIT) {
       position.isCollateral = false;
+      position.shares = BigInt.zero();
     } else if (transactionType === TransactionType.DEPOSIT_COLLATERAL) {
       position.isCollateral = true;
     }
+    position.balance = BigInt.zero();
     position.save();
 
     // update account position

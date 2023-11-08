@@ -60,9 +60,9 @@ export function createMarket(
   market.createdTimestamp = event.block.timestamp;
   market.createdBlockNumber = event.block.number;
 
-  market.inputToken = loanToken.getToken().id;
+  market.inputToken = collateralToken.getToken().id;
   market.inputTokenBalance = BigInt.zero();
-  market.inputTokenPriceUSD = loanToken.getPriceUSD();
+  market.inputTokenPriceUSD = collateralToken.getPriceUSD();
   market.rates = []; // TODO: to define
   market.reserves = BigDecimal.zero();
   market.reserveFactor = BigDecimal.zero();
