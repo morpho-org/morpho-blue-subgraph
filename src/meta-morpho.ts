@@ -241,8 +241,10 @@ export function handleSubmitCap(event: SubmitCapEvent): void {
   const mm = loadMetaMorpho(event.address);
   const id = event.address
     .concat(event.params.id)
-    .concat(Bytes.fromHexString(event.params.cap.toHexString()))
-    .concat(Bytes.fromHexString(event.block.timestamp.toHexString()));
+    .concat(Bytes.fromHexString(event.block.timestamp.toHexString()))
+    .concat(Bytes.fromI32(event.logIndex.toI32()))
+    .concat(Bytes.fromI32(event.transactionLogIndex.toI32()));
+
   const pendingCap = new PendingCap(id);
   pendingCap.metaMorpho = mm.id;
   pendingCap.cap = event.params.cap;
