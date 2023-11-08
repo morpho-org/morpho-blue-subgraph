@@ -1,13 +1,19 @@
 import {
   Address,
-  Bytes,
-  BigInt,
-  ethereum,
   BigDecimal,
+  BigInt,
+  Bytes,
+  ethereum,
   log,
 } from "@graphprotocol/graph-ts";
 
 import {
+  IRM,
+  IRM__borrowRateViewInputMarketParamsStruct,
+  IRM__borrowRateViewInputMarketStruct,
+} from "../../generated/MorphoBlue/IRM";
+import {
+  _MarketList,
   Borrow,
   Deposit,
   Fee,
@@ -15,11 +21,11 @@ import {
   InterestRate,
   LendingProtocol,
   Market,
+  Oracle,
+  Position,
   Repay,
   RevenueDetail,
   Withdraw,
-  _MarketList,
-  Position,
 } from "../../generated/schema";
 import { getMarket } from "../initializers/markets";
 import { getProtocol } from "../initializers/protocol";
@@ -27,13 +33,15 @@ import { getProtocol } from "../initializers/protocol";
 import { AccountManager } from "./account";
 import {
   activityCounter,
+  BIGDECIMAL_WAD,
+  BIGINT_WAD,
   exponentToBigDecimal,
   FeeType,
+  insert,
   INT_ONE,
   Transaction,
   TransactionType,
 } from "./constants";
-import { insert } from "./constants";
 import { SnapshotManager } from "./snapshots";
 import { TokenManager } from "./token";
 
@@ -173,12 +181,12 @@ export class DataManager {
     deposit.amountUSD = amountUSD;
     deposit.save();
 
-    this.updateTransactionData(
+    this._updateTransactionData(
       TransactionType.DEPOSIT_COLLATERAL,
       amount,
       amountUSD
     );
-    this.updateUsageData(TransactionType.DEPOSIT_COLLATERAL, position.account);
+    this._updateUsageData(TransactionType.DEPOSIT_COLLATERAL, position.account);
 
     return deposit;
   }
@@ -211,8 +219,8 @@ export class DataManager {
     deposit.amountUSD = amountUSD;
     deposit.save();
 
-    this.updateTransactionData(TransactionType.DEPOSIT, amount, amountUSD);
-    this.updateUsageData(TransactionType.DEPOSIT, position.account);
+    this._updateTransactionData(TransactionType.DEPOSIT, amount, amountUSD);
+    this._updateUsageData(TransactionType.DEPOSIT, position.account);
 
     return deposit;
   }
@@ -246,12 +254,16 @@ export class DataManager {
     withdraw.isCollateral = true;
     withdraw.save();
 
-    this.updateTransactionData(
+    this._updateTransactionData(
       TransactionType.WITHDRAW_COLLATERAL,
       amount,
       amountUSD
     );
-    this.updateUsageData(TransactionType.WITHDRAW_COLLATERAL, position.account);
+
+    this._updateUsageData(
+      TransactionType.WITHDRAW_COLLATERAL,
+      position.account
+    );
 
     return withdraw;
   }
@@ -286,8 +298,8 @@ export class DataManager {
     withdraw.shares = shares;
     withdraw.save();
 
-    this.updateTransactionData(TransactionType.WITHDRAW, amount, amountUSD);
-    this.updateUsageData(TransactionType.WITHDRAW, position.account);
+    this._updateTransactionData(TransactionType.WITHDRAW, amount, amountUSD);
+    this._updateUsageData(TransactionType.WITHDRAW, position.account);
 
     return withdraw;
   }
@@ -319,8 +331,8 @@ export class DataManager {
     borrow.shares = shares;
     borrow.save();
 
-    this.updateTransactionData(TransactionType.BORROW, amount, amountUSD);
-    this.updateUsageData(TransactionType.BORROW, position.account);
+    this._updateTransactionData(TransactionType.BORROW, amount, amountUSD);
+    this._updateUsageData(TransactionType.BORROW, position.account);
 
     return borrow;
   }
@@ -357,8 +369,8 @@ export class DataManager {
     repay.amountUSD = amountUSD;
     repay.save();
 
-    this.updateTransactionData(TransactionType.REPAY, amount, amountUSD);
-    this.updateUsageData(TransactionType.REPAY, position.account);
+    this._updateTransactionData(TransactionType.REPAY, amount, amountUSD);
+    this._updateUsageData(TransactionType.REPAY, position.account);
 
     return repay;
   }
@@ -394,14 +406,16 @@ export class DataManager {
     flashloan.amountUSD = amountUSD;
     flashloan.save();
 
-    this.updateTransactionData(TransactionType.FLASHLOAN, amount, amountUSD);
-    this.updateUsageData(TransactionType.FLASHLOAN, account);
+    this._updateTransactionData(TransactionType.FLASHLOAN, amount, amountUSD);
+    this._updateUsageData(TransactionType.FLASHLOAN, account);
 
     return flashloan;
   }
 
   // used to update tvl, borrow balance, reserves, etc. in market and protocol
   updateMarketAndProtocolData(): void {
+    // MARKET part
+
     const inputTokenPriceUSD = this._inputToken.updatePrice();
     const borrowableTokenPriceUSD = this._borrowedToken.updatePrice();
     this._market.inputTokenPriceUSD = inputTokenPriceUSD;
@@ -425,11 +439,14 @@ export class DataManager {
     this._market.totalValueLockedUSD = totalCollateralUSD.plus(totalSupplyUSD);
     this._market.totalDepositBalanceUSD = this._market.totalValueLockedUSD;
 
+    this._updateInterestRates();
     this._market.save();
+
+    // PROTOCOL part
 
     let totalValueLockedUSD = BigDecimal.zero();
     let totalBorrowBalanceUSD = BigDecimal.zero();
-    const marketList = this.getOrAddMarketToList();
+    const marketList = this._getOrAddMarketToList();
     for (let i = 0; i < marketList.length; i++) {
       const _market = Market.load(marketList[i]);
       if (!_market) {
@@ -456,7 +473,7 @@ export class DataManager {
     protocolRevenueDelta: BigDecimal,
     fee: Fee | null = null
   ): void {
-    this.updateRevenue(protocolRevenueDelta, BigDecimal.zero());
+    this._updateRevenue(protocolRevenueDelta, BigDecimal.zero());
 
     if (!fee) {
       fee = this.getOrUpdateFee(FeeType.OTHER);
@@ -471,8 +488,8 @@ export class DataManager {
       false
     );
 
-    this.insertInOrder(marketRevDetails, protocolRevenueDelta, fee.id);
-    this.insertInOrder(protocolRevenueDetail, protocolRevenueDelta, fee.id);
+    this._insertInOrder(marketRevDetails, protocolRevenueDelta, fee.id);
+    this._insertInOrder(protocolRevenueDetail, protocolRevenueDelta, fee.id);
   }
 
   //
@@ -482,7 +499,7 @@ export class DataManager {
     supplyRevenueDelta: BigDecimal,
     fee: Fee | null = null
   ): void {
-    this.updateRevenue(BigDecimal.zero(), supplyRevenueDelta);
+    this._updateRevenue(BigDecimal.zero(), supplyRevenueDelta);
 
     if (!fee) {
       fee = this.getOrUpdateFee(FeeType.OTHER);
@@ -497,11 +514,11 @@ export class DataManager {
       false
     );
 
-    this.insertInOrder(marketRevDetails, supplyRevenueDelta, fee.id);
-    this.insertInOrder(protocolRevenueDetail, supplyRevenueDelta, fee.id);
+    this._insertInOrder(marketRevDetails, supplyRevenueDelta, fee.id);
+    this._insertInOrder(protocolRevenueDetail, supplyRevenueDelta, fee.id);
   }
 
-  private updateRevenue(
+  private _updateRevenue(
     protocolRevenueDelta: BigDecimal,
     supplyRevenueDelta: BigDecimal
   ): void {
@@ -536,7 +553,7 @@ export class DataManager {
   //
   // this only updates the usage data for the entities changed in this class
   // (ie, market and protocol)
-  private updateUsageData(transactionType: string, account: Bytes): void {
+  private _updateUsageData(transactionType: string, account: Bytes): void {
     this._market.cumulativeUniqueUsers += activityCounter(
       account,
       transactionType,
@@ -632,7 +649,7 @@ export class DataManager {
   //
   // this only updates the usage data for the entities changed in this class
   // (ie, market and protocol)
-  private updateTransactionData(
+  private _updateTransactionData(
     transactionType: string,
     amount: BigInt,
     amountUSD: BigDecimal
@@ -694,7 +711,7 @@ export class DataManager {
   //
   //
   // Insert revenue in RevenueDetail in order (alphabetized)
-  private insertInOrder(
+  private _insertInOrder(
     details: RevenueDetail,
     amountUSD: BigDecimal,
     associatedSource: string
@@ -735,7 +752,7 @@ export class DataManager {
   //
   //
   // Get list of markets in the protocol (or add new market if not in there)
-  private getOrAddMarketToList(marketID: Bytes | null = null): Bytes[] {
+  private _getOrAddMarketToList(marketID: Bytes | null = null): Bytes[] {
     // TODO: whitelist marketSource for a list of markets.
     let markets = _MarketList.load(this._protocol.id);
     if (!markets) {
@@ -759,5 +776,102 @@ export class DataManager {
     markets.save();
 
     return marketList;
+  }
+
+  private _updateInterestRates(): void {
+    const irmAddress = Address.fromBytes(this._market.irm);
+    if (irmAddress === Address.zero()) return;
+    const irm = IRM.bind(irmAddress);
+    if (this._market.totalBorrow.equals(BigInt.zero())) return;
+
+    const marketStruct = new IRM__borrowRateViewInputMarketStruct();
+    marketStruct.push(
+      ethereum.Value.fromUnsignedBigInt(this._market.totalSupply)
+    );
+    marketStruct.push(
+      ethereum.Value.fromUnsignedBigInt(this._market.totalSupplyShares)
+    );
+    marketStruct.push(
+      ethereum.Value.fromUnsignedBigInt(this._market.totalBorrow)
+    );
+    marketStruct.push(
+      ethereum.Value.fromUnsignedBigInt(this._market.totalBorrowShares)
+    );
+    marketStruct.push(
+      ethereum.Value.fromUnsignedBigInt(this._market.lastUpdate)
+    );
+    marketStruct.push(ethereum.Value.fromUnsignedBigInt(this._market.fee));
+
+    const marketParams = new IRM__borrowRateViewInputMarketParamsStruct();
+    marketParams.push(
+      ethereum.Value.fromAddress(Address.fromBytes(this._market.borrowedToken))
+    );
+    marketParams.push(
+      ethereum.Value.fromAddress(Address.fromBytes(this._market.inputToken))
+    );
+    const oracle = Oracle.load(this._market.oracle);
+    if (!oracle) {
+      log.critical("[updateInterestRates] Oracle not found: {}", [
+        this._market.oracle.toHexString(),
+      ]);
+      return;
+    }
+    marketParams.push(
+      ethereum.Value.fromAddress(Address.fromBytes(oracle.oracleAddress))
+    );
+
+    marketParams.push(
+      ethereum.Value.fromAddress(Address.fromBytes(this._market.irm))
+    );
+    marketParams.push(ethereum.Value.fromUnsignedBigInt(this._market.lltv));
+
+    const borrowRateTry = irm.try_borrowRateView(marketParams, marketStruct);
+    if (!borrowRateTry.reverted) {
+      const secondsPerYear = BigDecimal.fromString("31536000");
+
+      const borrowRate = borrowRateTry.value
+        .toBigDecimal()
+        .div(BIGDECIMAL_WAD)
+        .times(secondsPerYear);
+
+      const utilization = this._market.totalBorrow
+        .times(BIGINT_WAD)
+        .div(this._market.totalSupply)
+        .toBigDecimal()
+        .div(BIGDECIMAL_WAD);
+
+      const feesPercent = BigDecimal.fromString("1").minus(
+        this._market.fee.toBigDecimal().div(BIGDECIMAL_WAD)
+      );
+      const supplyRate = borrowRate.times(utilization).times(feesPercent);
+
+      const supplyRateId = this._market.id.toHexString() + "-supply";
+
+      let supplyRateSnapshot = InterestRate.load(supplyRateId);
+      if (!supplyRateSnapshot) {
+        log.critical("[updateInterestRates] Supply rate not found: {}", [
+          supplyRateId,
+        ]);
+        return;
+      }
+      supplyRateSnapshot.rate = supplyRate;
+      supplyRateSnapshot.save();
+
+      const borrowRateId = this._market.id.toHexString() + "-borrow";
+
+      let borrowRateSnapshot = InterestRate.load(borrowRateId);
+      if (!borrowRateSnapshot) {
+        log.critical("[updateInterestRates] Borrow rate not found: {}", [
+          borrowRateId,
+        ]);
+        return;
+      }
+      borrowRateSnapshot.rate = borrowRate;
+      borrowRateSnapshot.save();
+
+      this._market.rates = [supplyRateSnapshot.id, borrowRateSnapshot.id];
+    }
+
+    this._market.save();
   }
 }

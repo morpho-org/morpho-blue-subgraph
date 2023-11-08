@@ -578,6 +578,7 @@ export class SnapshotManager {
       snapshotRate.rate = rate.rate;
       snapshotRate.side = rate.side;
       snapshotRate.type = rate.type;
+      snapshotRate.market = this.market.id;
       snapshotRate.save();
       snapshotRates.push(snapshotRateId);
     }

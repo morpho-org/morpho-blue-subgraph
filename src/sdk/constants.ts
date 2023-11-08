@@ -79,7 +79,6 @@ export type InterestRateType = string;
 
 export namespace InterestRateSide {
   export const LENDER = "LENDER";
-  export const SUPPLIER = "SUPPLIER";
   export const BORROWER = "BORROWER";
 }
 

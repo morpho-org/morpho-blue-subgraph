@@ -8,13 +8,20 @@ import {
 } from "@graphprotocol/graph-ts";
 
 import { CreateMarketMarketParamsStruct } from "../../generated/MorphoBlue/MorphoBlue";
-import { _MarketList, Market, Oracle } from "../../generated/schema";
+import {
+  _MarketList,
+  InterestRate,
+  Market,
+  Oracle,
+} from "../../generated/schema";
 import {
   BIGDECIMAL_ONE,
   BIGDECIMAL_WAD,
   insert,
   INT_ONE,
   INT_ZERO,
+  InterestRateSide,
+  InterestRateType,
 } from "../sdk/constants";
 import { TokenManager } from "../sdk/token";
 import { getLiquidationIncentiveFactor } from "../utils/liquidationIncentives";
@@ -63,9 +70,10 @@ export function createMarket(
   market.inputToken = collateralToken.getToken().id;
   market.inputTokenBalance = BigInt.zero();
   market.inputTokenPriceUSD = collateralToken.getPriceUSD();
-  market.rates = []; // TODO: to define
+  market.rates = []; // initialized to zero, modified later
   market.reserves = BigDecimal.zero();
   market.reserveFactor = BigDecimal.zero();
+  market.lltv = marketStruct ? marketStruct.lltv : BigInt.zero();
 
   market.borrowedToken = loanToken.getToken().id;
   market.variableBorrowedTokenBalance = BigInt.zero();
@@ -116,23 +124,44 @@ export function createMarket(
   market.interest = BigInt.zero();
   market.fee = BigInt.zero();
 
-  market.save();
-  if (marketStruct) {
-    const oracle = new Oracle(market.id.concat(marketStruct.oracle));
-    oracle.market = market.id;
-    oracle.oracleAddress = marketStruct.oracle;
-    oracle.blockCreated = event.block.number;
-    oracle.timestampCreated = event.block.timestamp;
-    oracle.isActive = true;
-    const isUsd = !!loanToken.getToken().symbol.includes("USD");
-    oracle.isUSD = isUsd;
-    // TODO: whitelist oracleSource for a list of oracles.
-    oracle.save();
+  market.lastUpdate = event.block.timestamp;
 
-    // TODO: fix this workaround of the relation between oracle & market.
-    market.oracle = oracle.id;
-    market.save();
-  }
+  market.irm = marketStruct ? marketStruct.irm : Address.zero();
+
+  const oracleAddress = marketStruct ? marketStruct.oracle : Address.zero();
+  const oracle = new Oracle(market.id.concat(oracleAddress));
+  oracle.oracleAddress = oracleAddress;
+  oracle.blockCreated = event.block.number;
+  oracle.timestampCreated = event.block.timestamp;
+  oracle.isActive = true;
+  const isUsd = !!loanToken.getToken().symbol.includes("USD");
+  oracle.isUSD = isUsd;
+  // TODO: whitelist oracleSource for a list of oracles.
+  oracle.save();
+
+  // TODO: fix this workaround of the relation between oracle & market.
+  market.oracle = oracle.id;
+  market.save();
+
+  // Create interest rates
+  const supplyRateId = market.id.toHexString() + "-supply";
+  const supplyRate = new InterestRate(supplyRateId);
+  supplyRate.rate = BigDecimal.zero();
+  supplyRate.market = market.id;
+  supplyRate.side = InterestRateSide.LENDER;
+  supplyRate.type = InterestRateType.VARIABLE;
+  supplyRate.save();
+
+  const borrowRateId = market.id.toHexString() + "-borrow";
+  const borrowRate = new InterestRate(borrowRateId);
+  borrowRate.rate = BigDecimal.zero();
+  borrowRate.market = market.id;
+  borrowRate.side = InterestRateSide.BORROWER;
+  borrowRate.type = InterestRateType.VARIABLE;
+  borrowRate.save();
+
+  market.rates = [supplyRateId, borrowRateId];
+  market.save();
 
   const protocol = getProtocol();
   protocol.totalPoolCount += INT_ONE;

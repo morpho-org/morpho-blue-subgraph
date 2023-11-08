@@ -39,6 +39,7 @@ export function handleAccrueInterest(event: AccrueInterest): void {
   market.totalSupplyShares = market.totalSupplyShares.plus(
     event.params.feeShares
   );
+  market.lastUpdate = event.block.timestamp;
 
   if (event.params.feeShares.gt(BigInt.zero())) {
     // We heck the consistency of the fee data

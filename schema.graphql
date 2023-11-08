@@ -164,6 +164,8 @@ type InterestRate @entity @regularPolling {
 
   " The type of interest rate (e.g. stable, fixed, variable, etc) "
   type: InterestRateType!
+
+  market: Market!
 }
 
 enum FeeType {
@@ -236,7 +238,7 @@ type Oracle @entity @regularPolling {
   oracleAddress: Bytes!
 
   " The market that this oracle is used for pricing "
-  market: Market!
+  market: Market! @derivedFrom(field: "oracle")
 
   " The block this oracle was adopted for a market "
   blockCreated: BigInt!
@@ -764,7 +766,7 @@ type Market @entity @regularPolling {
   createdBlockNumber: BigInt!
 
   " Details about the price oracle used to get this token's price "
-  oracle: Oracle
+  oracle: Oracle!
 
   " A unique identifier that can relate multiple markets. e.g. a common address that is the same for each related market. This is useful for markets with multiple input tokens "
   relation: Bytes
@@ -951,9 +953,13 @@ type Market @entity @regularPolling {
 
   totalSupply: BigInt!
   totalBorrow: BigInt!
+  lastUpdate: BigInt!
 
   interest: BigInt!
   fee: BigInt!
+
+  irm: Bytes!
+  lltv: BigInt!
 }
 
 #################################
