@@ -1,3 +1,6 @@
+import { Address, log } from "@graphprotocol/graph-ts";
+
+import { MetaMorpho } from "../generated/schema";
 import {
   AccrueFee as AccrueFeeEvent,
   Approval as ApprovalEvent,
@@ -31,7 +34,27 @@ import {
   Withdraw as WithdrawEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
-export function handleAccrueFee(event: AccrueFeeEvent): void {}
+import { toAssetsDown } from "./maths/shares";
+
+function loadMetaMorpho(address: Address): MetaMorpho {
+  const mm = MetaMorpho.load(address);
+  if (!mm) {
+    log.critical("MetaMorpho {} not found", [address.toHexString()]);
+  }
+  return mm!;
+}
+export function handleAccrueFee(event: AccrueFeeEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.feeAccrued = mm.feeAccrued.plus(event.params.feeShares);
+  // Convert to assets
+  const feeAssets = toAssetsDown(
+    event.params.feeShares,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  mm.feeAccruedAssets = mm.feeAccruedAssets.plus(feeAssets);
+  mm.save();
+}
 
 export function handleApproval(event: ApprovalEvent): void {}
 

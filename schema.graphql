@@ -1990,3 +1990,67 @@ type _ChainlinkAggregator @entity {
   proxy: _ChainlinkProxy!
   isDeprecated: Boolean!
 }
+
+
+type MetaMorpho @entity {
+  id: Bytes!
+  name: String!
+  symbol: String!
+  decimals: Int!
+
+  asset: Token!
+
+  owner: Account!
+  curators: [Account!]!
+  allocators: [Account!]!
+  guardian: Account!
+
+  timelock: BigInt!
+
+  fee: BigInt!
+  feeRecipient: Account!
+  feeAccrued: BigInt!
+  feeAccruedAssets: BigInt!
+
+  lastTotalAssets: BigInt!
+  totalShares: BigInt!
+
+  supplyQueue: [Market!]!
+  withdrawQueue: [Market!]!
+
+  pendingTimelock: PendingTimelock @derivedFrom(field: "metaMorpho")
+  pendingGuardian: PendingGuardian @derivedFrom(field: "metaMorpho")
+
+  pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorpho")
+
+}
+
+type MetaMorphoMarket @entity {
+  id: Bytes!
+  metaMorpho: MetaMorpho!
+  market: Market!
+  cap: BigInt!
+#  TODO: add position
+}
+
+type PendingTimelock @entity {
+  id: Bytes!
+  timelock: BigInt!
+  metaMorpho: MetaMorpho!
+}
+
+type PendingCap @entity {
+  id: Bytes!
+  cap: BigInt!
+  metaMorpho: MetaMorpho!
+  market: Market!
+  isNewMarket: Boolean!
+  validAt: BigInt!
+}
+
+type PendingGuardian @entity {
+  id: Bytes!
+  guardian: BigInt!
+  metaMorpho: MetaMorpho!
+  validAt: BigInt!
+}
