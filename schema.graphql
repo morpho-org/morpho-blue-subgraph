@@ -2035,6 +2035,8 @@ type MetaMorphoMarket @entity {
   cap: BigInt!
   withdrawRank: BigInt!
   currentPendingCap: PendingCap
+  isInSupplyQueue: Boolean!
+  isInWithdrawQueue: Boolean!
   pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorphoMarket")
 #  TODO: add position
 }
@@ -2073,4 +2075,19 @@ type PendingGuardian @entity {
   submittedAt: BigInt!
   validAt: BigInt!
   status: PendingValueStatus!
+}
+enum QueueType {
+  SUPPLY_QUEUE
+    WITHDRAW_QUEUE
+}
+type NewQueue @entity {
+  id: Bytes!
+  queueType: QueueType!
+  caller: Account!
+  metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
+  previousQueue: [MetaMorphoMarket!]!
+  newQueue: [MetaMorphoMarket!]!
+  removedMarkets: [MetaMorphoMarket!]!
+  addedMarkets: [MetaMorphoMarket!]!
 }

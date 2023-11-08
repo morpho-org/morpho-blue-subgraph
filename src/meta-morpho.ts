@@ -3,6 +3,7 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 import {
   MetaMorpho,
   MetaMorphoMarket,
+  NewQueue,
   PendingCap,
   PendingGuardian,
   PendingTimelock,
@@ -41,7 +42,8 @@ import {
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
 import { toAssetsDown } from "./maths/shares";
-import { PendingValueStatus } from "./sdk/metamorpho";
+import { AccountManager } from "./sdk/account";
+import { PendingValueStatus, QueueType } from "./sdk/metamorpho";
 
 function loadMetaMorpho(address: Address): MetaMorpho {
   const mm = MetaMorpho.load(address);
@@ -115,10 +117,10 @@ export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
     ]);
     return;
   }
-  const pendingCap = PendingCap.load(mmMarket.currentPendingCap);
+  const pendingCap = PendingCap.load(mmMarket.currentPendingCap!);
   if (!pendingCap) {
     log.critical("PendingCap {} not found", [
-      mmMarket.currentPendingCap.toHexString(),
+      mmMarket.currentPendingCap!.toHexString(),
     ]);
     return;
   }
@@ -140,10 +142,10 @@ export function handleRevokePendingGuardian(
     ]);
     return;
   }
-  const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian);
+  const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian!);
   if (!pendingGuardian) {
     log.critical("PendingGuardian {} not found", [
-      mm.currentPendingGuardian.toHexString(),
+      mm.currentPendingGuardian!.toHexString(),
     ]);
     return;
   }
@@ -164,10 +166,10 @@ export function handleRevokePendingTimelock(
     ]);
     return;
   }
-  const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock);
+  const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock!);
   if (!pendingTimelock) {
     log.critical("PendingTimelock {} not found", [
-      mm.currentPendingTimelock.toHexString(),
+      mm.currentPendingTimelock!.toHexString(),
     ]);
     return;
   }
@@ -190,14 +192,16 @@ export function handleSetCap(event: SetCapEvent): void {
     mm.withdrawQueue = mm.withdrawQueue.concat([mmMarket.id]);
     mm.save();
     mmMarket.withdrawRank = BigInt.fromI32(mm.withdrawQueue.length);
+    mmMarket.isInSupplyQueue = true;
+    mmMarket.isInWithdrawQueue = true;
   }
 
   mmMarket.cap = event.params.cap;
   if (mmMarket.currentPendingCap) {
-    const pendingCap = PendingCap.load(mmMarket.currentPendingCap);
+    const pendingCap = PendingCap.load(mmMarket.currentPendingCap!);
     if (!pendingCap) {
       log.critical("PendingCap {} not found", [
-        mmMarket.currentPendingCap.toHexString(),
+        mmMarket.currentPendingCap!.toHexString(),
       ]);
       return;
     }
@@ -220,10 +224,10 @@ export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {}
 export function handleSetGuardian(event: SetGuardianEvent): void {
   const mm = loadMetaMorpho(event.address);
   if (mm.currentPendingGuardian) {
-    const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian);
+    const pendingGuardian = PendingGuardian.load(mm.currentPendingGuardian!);
     if (!pendingGuardian) {
       log.critical("PendingGuardian {} not found", [
-        mm.currentPendingGuardian.toHexString(),
+        mm.currentPendingGuardian!.toHexString(),
       ]);
       return;
     }
@@ -248,15 +252,47 @@ export function handleSetRewardsRecipient(
 export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   // Supply queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
   const mm = loadMetaMorpho(event.address);
-  const newSupplyQueue = [];
+  const newSupplyQueue: Array<Bytes> = [];
+  const addedMarkets: Array<Bytes> = [];
+  const seen = new Map<Bytes, boolean>();
   for (let i = 0; i < event.params.newSupplyQueue.length; i++) {
     const mmMarket = loadMetaMorphoMarket(
       event.address,
       event.params.newSupplyQueue[i]
     );
+    if (!mmMarket.isInSupplyQueue) {
+      addedMarkets.push(mmMarket.id);
+      mmMarket.isInSupplyQueue = true;
+      mmMarket.save();
+    }
+    seen.set(mmMarket.id, true);
     newSupplyQueue.push(mmMarket.id);
   }
-  // TODO: log previous supply queue and current one in a dedicated entity
+  const removedMarkets: Array<Bytes> = [];
+  for (let i = 0; i < mm.supplyQueue.length; i++) {
+    if (!seen.has(mm.supplyQueue[i])) {
+      const mmMarket = loadMetaMorphoMarket(event.address, mm.supplyQueue[i]);
+      mmMarket.isInSupplyQueue = false;
+      mmMarket.save();
+      removedMarkets.push(mmMarket.id);
+    }
+  }
+  const newQueue = new NewQueue(
+    event.address
+      .concat(Bytes.fromI32(event.block.timestamp.toI32()))
+      .concat(Bytes.fromI32(event.logIndex.toI32()))
+      .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
+  );
+  newQueue.queueType = QueueType.SUPPLY_QUEUE;
+  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
+  newQueue.metaMorpho = mm.id;
+  newQueue.submittedAt = event.block.timestamp;
+  newQueue.removedMarkets = removedMarkets;
+  newQueue.previousQueue = mm.supplyQueue;
+  newQueue.newQueue = newSupplyQueue;
+  newQueue.addedMarkets = addedMarkets;
+  newQueue.save();
+
   mm.supplyQueue = newSupplyQueue;
   mm.save();
 }
@@ -264,10 +300,10 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
 export function handleSetTimelock(event: SetTimelockEvent): void {
   const mm = loadMetaMorpho(event.address);
   if (mm.currentPendingTimelock) {
-    const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock);
+    const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock!);
     if (!pendingTimelock) {
       log.critical("PendingTimelock {} not found", [
-        mm.currentPendingTimelock.toHexString(),
+        mm.currentPendingTimelock!.toHexString(),
       ]);
       return;
     }
@@ -287,14 +323,47 @@ export function handleSetTimelock(event: SetTimelockEvent): void {
 export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
   // Withdraw queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
   const mm = loadMetaMorpho(event.address);
-  const newWithdrawQueue = [];
+  const newWithdrawQueue: Array<Bytes> = [];
+  const seen = new Map<Bytes, boolean>();
   for (let i = 0; i < event.params.newWithdrawQueue.length; i++) {
     const mmMarket = loadMetaMorphoMarket(
       event.address,
       event.params.newWithdrawQueue[i]
     );
+    mmMarket.withdrawRank = BigInt.fromI32(i + 1);
+    mmMarket.save();
+    seen.set(mmMarket.id, true);
     newWithdrawQueue.push(mmMarket.id);
   }
+  const removedMarkets: Array<Bytes> = [];
+  for (let i = 0; i < mm.withdrawQueue.length; i++) {
+    if (!seen.has(mm.withdrawQueue[i])) {
+      // TODO: we can add a check that the supply on the market is 0
+      const mmMarket = loadMetaMorphoMarket(event.address, mm.withdrawQueue[i]);
+      mmMarket.withdrawRank = BigInt.zero();
+      mmMarket.isInWithdrawQueue = false;
+      mmMarket.save();
+      removedMarkets.push(mmMarket.id);
+    }
+  }
+  const newQueue = new NewQueue(
+    event.address
+      .concat(Bytes.fromI32(event.block.timestamp.toI32()))
+      .concat(Bytes.fromI32(event.logIndex.toI32()))
+      .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
+  );
+  newQueue.queueType = QueueType.WITHDRAW_QUEUE;
+  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
+  newQueue.metaMorpho = mm.id;
+  newQueue.submittedAt = event.block.timestamp;
+  newQueue.removedMarkets = removedMarkets;
+  newQueue.previousQueue = mm.withdrawQueue;
+  newQueue.newQueue = newWithdrawQueue;
+  newQueue.addedMarkets = []; // cannot add markets to the withdraw queue
+  newQueue.save();
+
+  mm.withdrawQueue = newWithdrawQueue;
+  mm.save();
 }
 
 export function handleSubmitCap(event: SubmitCapEvent): void {
@@ -328,6 +397,8 @@ export function handleSubmitCap(event: SubmitCapEvent): void {
     metaMorphoMarket.cap = BigInt.zero();
     metaMorphoMarket.market = event.params.id;
     metaMorphoMarket.withdrawRank = BigInt.zero();
+    metaMorphoMarket.isInSupplyQueue = false;
+    metaMorphoMarket.isInWithdrawQueue = false;
   }
   metaMorphoMarket.currentPendingCap = pendingCap.id;
   metaMorphoMarket.save();
