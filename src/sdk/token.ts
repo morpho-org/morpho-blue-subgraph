@@ -63,12 +63,9 @@ export class TokenManager {
     return this._token.decimals;
   }
 
-  _getName(): string {
-    return this._token.name;
-  }
-
   updatePrice(): BigDecimal {
     // TODO: add Chainlink logic of collateral / borrowed conversion logic
+
     return BigDecimal.fromString("0");
   }
 
