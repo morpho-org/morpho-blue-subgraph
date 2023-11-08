@@ -1,6 +1,6 @@
-import { Address, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
-import { MetaMorpho } from "../generated/schema";
+import { MetaMorpho, MetaMorphoMarket, PendingCap } from "../generated/schema";
 import {
   AccrueFee as AccrueFeeEvent,
   Approval as ApprovalEvent,
@@ -35,6 +35,7 @@ import {
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
 import { toAssetsDown } from "./maths/shares";
+import { PendingValueStatus } from "./sdk/metamorpho";
 
 function loadMetaMorpho(address: Address): MetaMorpho {
   const mm = MetaMorpho.load(address);
@@ -42,6 +43,18 @@ function loadMetaMorpho(address: Address): MetaMorpho {
     log.critical("MetaMorpho {} not found", [address.toHexString()]);
   }
   return mm!;
+}
+function loadMetaMorphoMarket(
+  address: Address,
+  marketId: Bytes
+): MetaMorphoMarket {
+  const mmMarket = MetaMorphoMarket.load(address.concat(marketId));
+  if (!mmMarket) {
+    log.critical("MetaMorphoMarket {} not found", [
+      address.concat(marketId).toHexString(),
+    ]);
+  }
+  return mmMarket!;
 }
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   const mm = loadMetaMorpho(event.address);
@@ -58,7 +71,10 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
 
 export function handleApproval(event: ApprovalEvent): void {}
 
-export function handleDeposit(event: DepositEvent): void {}
+export function handleDeposit(event: DepositEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.totalShares = mm.totalShares.plus(event.params.shares);
+}
 
 export function handleEIP712DomainChanged(
   event: EIP712DomainChangedEvent
@@ -70,7 +86,11 @@ export function handleOwnershipTransferStarted(
 
 export function handleOwnershipTransferred(
   event: OwnershipTransferredEvent
-): void {}
+): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.owner = event.params.newOwner;
+  mm.save();
+}
 
 export function handleReallocateIdle(event: ReallocateIdleEvent): void {}
 
@@ -80,7 +100,29 @@ export function handleReallocateWithdraw(
   event: ReallocateWithdrawEvent
 ): void {}
 
-export function handleRevokePendingCap(event: RevokePendingCapEvent): void {}
+export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
+  const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
+
+  if (!mmMarket.currentPendingCap) {
+    log.critical("MetaMorphoMarket {} has no pending cap", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const pendingCap = PendingCap.load(mmMarket.currentPendingCap);
+  if (!pendingCap) {
+    log.critical("PendingCap {} not found", [
+      mmMarket.currentPendingCap.toHexString(),
+    ]);
+    return;
+  }
+
+  pendingCap.status = PendingValueStatus.REJECTED;
+  pendingCap.save();
+
+  mmMarket.currentPendingCap = null;
+  mmMarket.save();
+}
 
 export function handleRevokePendingGuardian(
   event: RevokePendingGuardianEvent
@@ -90,7 +132,24 @@ export function handleRevokePendingTimelock(
   event: RevokePendingTimelockEvent
 ): void {}
 
-export function handleSetCap(event: SetCapEvent): void {}
+export function handleSetCap(event: SetCapEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
+
+  if (
+    event.params.cap.gt(BigInt.zero()) &&
+    mmMarket.withdrawRank === BigInt.zero()
+  ) {
+    mm.supplyQueue = mm.supplyQueue.concat([mmMarket.id]);
+    mm.withdrawQueue = mm.withdrawQueue.concat([mmMarket.id]);
+    mm.save();
+    mmMarket.withdrawRank = BigInt.fromI32(mm.withdrawQueue.length);
+  }
+
+  mmMarket.cap = event.params.cap;
+  mmMarket.currentPendingCap = null;
+  mmMarket.save();
+}
 
 export function handleSetCurator(event: SetCuratorEvent): void {}
 
@@ -112,7 +171,39 @@ export function handleSetTimelock(event: SetTimelockEvent): void {}
 
 export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {}
 
-export function handleSubmitCap(event: SubmitCapEvent): void {}
+export function handleSubmitCap(event: SubmitCapEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  const id = event.address
+    .concat(event.params.id)
+    .concat(Bytes.fromHexString(event.params.cap.toHexString()))
+    .concat(Bytes.fromHexString(event.block.timestamp.toHexString()));
+  const pendingCap = new PendingCap(id);
+  pendingCap.metaMorpho = mm.id;
+  pendingCap.cap = event.params.cap;
+
+  const mmMarketId = event.address.concat(event.params.id);
+  let metaMorphoMarket = MetaMorphoMarket.load(mmMarketId);
+
+  pendingCap.isNewMarket =
+    !metaMorphoMarket || metaMorphoMarket.cap === BigInt.zero();
+
+  pendingCap.validAt = event.block.timestamp.plus(mm.timelock);
+  pendingCap.submittedAt = event.block.timestamp;
+  pendingCap.status = "PENDING";
+  pendingCap.metaMorphoMarket = mmMarketId;
+  pendingCap.save();
+
+  if (!metaMorphoMarket) {
+    // This is the only way to create a new MetaMorphoMarket
+    metaMorphoMarket = new MetaMorphoMarket(mmMarketId);
+    metaMorphoMarket.metaMorpho = mm.id;
+    metaMorphoMarket.cap = BigInt.zero();
+    metaMorphoMarket.market = event.params.id;
+    metaMorphoMarket.withdrawRank = BigInt.zero();
+  }
+  metaMorphoMarket.currentPendingCap = pendingCap.id;
+  metaMorphoMarket.save();
+}
 
 export function handleSubmitFee(event: SubmitFeeEvent): void {}
 

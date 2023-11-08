@@ -27,6 +27,7 @@ export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
 
   metaMorpho.lastTotalAssets = BigInt.zero();
   metaMorpho.totalShares = BigInt.zero();
+  metaMorpho.idle = BigInt.zero();
 
   metaMorpho.supplyQueue = [];
   metaMorpho.withdrawQueue = [];

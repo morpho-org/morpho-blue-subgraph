@@ -2014,12 +2014,15 @@ type MetaMorpho @entity {
 
   lastTotalAssets: BigInt!
   totalShares: BigInt!
+  idle: BigInt!
 
-  supplyQueue: [Market!]!
-  withdrawQueue: [Market!]!
+  supplyQueue: [MetaMorphoMarket!]!
+  withdrawQueue: [MetaMorphoMarket!]!
 
   pendingTimelock: PendingTimelock @derivedFrom(field: "metaMorpho")
+  currentPendingTimelock: PendingTimelock
   pendingGuardian: PendingGuardian @derivedFrom(field: "metaMorpho")
+  currentPendingGuardian: PendingGuardian
 
   pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorpho")
 
@@ -2030,6 +2033,9 @@ type MetaMorphoMarket @entity {
   metaMorpho: MetaMorpho!
   market: Market!
   cap: BigInt!
+  withdrawRank: BigInt!
+  currentPendingCap: PendingCap
+  pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorphoMarket")
 #  TODO: add position
 }
 
@@ -2039,13 +2045,21 @@ type PendingTimelock @entity {
   metaMorpho: MetaMorpho!
 }
 
+enum PendingValueStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+}
+
 type PendingCap @entity {
   id: Bytes!
   cap: BigInt!
   metaMorpho: MetaMorpho!
-  market: Market!
+  metaMorphoMarket: MetaMorphoMarket!
   isNewMarket: Boolean!
+  submittedAt: BigInt!
   validAt: BigInt!
+  status: PendingValueStatus!
 }
 
 type PendingGuardian @entity {
