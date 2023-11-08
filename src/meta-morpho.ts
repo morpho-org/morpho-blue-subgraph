@@ -1,6 +1,7 @@
 import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
+  FeeRecipient,
   MetaMorpho,
   MetaMorphoMarket,
   NewQueue,
@@ -75,6 +76,23 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
   );
   mm.feeAccruedAssets = mm.feeAccruedAssets.plus(feeAssets);
   mm.save();
+
+  if (!mm.feeRecipient) {
+    log.critical("MetaMorpho {} has no fee recipient", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  const feeRecipient = FeeRecipient.load(mm.feeRecipient!);
+  if (!feeRecipient) {
+    log.critical("FeeRecipient {} not found", [mm.feeRecipient!.toHexString()]);
+    return;
+  }
+  feeRecipient.feeAccrued = feeRecipient.feeAccrued.plus(
+    event.params.feeShares
+  );
+  feeRecipient.feeAccruedAssets = feeRecipient.feeAccruedAssets.plus(feeAssets);
+  feeRecipient.save();
 }
 
 export function handleApproval(event: ApprovalEvent): void {}
@@ -217,9 +235,28 @@ export function handleSetCap(event: SetCapEvent): void {
 
 export function handleSetCurator(event: SetCuratorEvent): void {}
 
-export function handleSetFee(event: SetFeeEvent): void {}
+export function handleSetFee(event: SetFeeEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.fee = event.params.newFee;
+  mm.save();
+}
 
-export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {}
+export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  let feeRecipient = FeeRecipient.load(event.params.newFeeRecipient);
+  if (!feeRecipient) {
+    feeRecipient = new FeeRecipient(event.params.newFeeRecipient);
+    feeRecipient.account = new AccountManager(
+      event.params.newFeeRecipient
+    ).getAccount().id;
+    feeRecipient.metaMorpho = mm.id;
+    feeRecipient.feeAccrued = BigInt.zero();
+    feeRecipient.feeAccruedAssets = BigInt.zero();
+    feeRecipient.save();
+  }
+  mm.feeRecipient = feeRecipient.id;
+  mm.save();
+}
 
 export function handleSetGuardian(event: SetGuardianEvent): void {
   const mm = loadMetaMorpho(event.address);
