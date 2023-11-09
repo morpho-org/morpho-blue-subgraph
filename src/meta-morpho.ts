@@ -277,12 +277,20 @@ export function handleSetFee(event: SetFeeEvent): void {
 
 export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {
   const mm = loadMetaMorpho(event.address);
+  const currentFeeRecipient = mm.feeRecipient
+    ? FeeRecipient.load(mm.feeRecipient!)
+    : null;
+  if (currentFeeRecipient) {
+    currentFeeRecipient.isCurrentFeeRecipient = false;
+    currentFeeRecipient.save();
+  }
   let feeRecipient = FeeRecipient.load(event.params.newFeeRecipient);
   if (!feeRecipient) {
     feeRecipient = new FeeRecipient(event.params.newFeeRecipient);
     feeRecipient.account = new AccountManager(
       event.params.newFeeRecipient
     ).getAccount().id;
+    feeRecipient.isCurrentFeeRecipient = true;
     feeRecipient.metaMorpho = mm.id;
     feeRecipient.feeAccrued = BigInt.zero();
     feeRecipient.feeAccruedAssets = BigInt.zero();

@@ -2042,6 +2042,7 @@ type FeeRecipient @entity {
   id: Bytes!
   account: Account!
   metaMorpho: MetaMorpho!
+  isCurrentFeeRecipient: Boolean!
   feeAccrued: BigInt!
   feeAccruedAssets: BigInt!
 }
