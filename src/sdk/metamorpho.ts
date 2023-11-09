@@ -65,7 +65,7 @@ export function updateMMRate(address: Address): void {
         mmMarket.market.toHexString(),
       ]);
     }
-    const marketSupplyRate = InterestRate.load(market.rates![0]!);
+    const marketSupplyRate = InterestRate.load(market.rates![0]);
     if (!marketSupplyRate) {
       log.critical("Market {} has no supply rate", [
         mmMarket.market.toHexString(),

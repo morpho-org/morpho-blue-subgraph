@@ -99,7 +99,6 @@ export function handleDeposit(event: DepositEvent): void {
     position.metaMorpho = mm.id;
     position.account = new AccountManager(event.params.owner).getAccount().id;
     position.shares = BigInt.zero();
-    position.save();
   }
   position.shares = position.shares.plus(event.params.shares);
 
@@ -135,6 +134,7 @@ export function handleDeposit(event: DepositEvent): void {
   deposit.amountUSD = token.getAmountUSD(event.params.assets);
   deposit.shares = event.params.shares;
   deposit.metaMorpho = mm.id;
+  deposit.metaMorphoPosition = position.id;
   deposit.save();
 }
 
@@ -621,7 +621,6 @@ export function handleTransfer(event: TransferEvent): void {
     toPosition.metaMorpho = mm.id;
     toPosition.account = new AccountManager(event.params.to).getAccount().id;
     toPosition.shares = BigInt.zero();
-    toPosition.save();
   }
   toPosition.shares = toPosition.shares.plus(event.params.value);
   const toAssets = toAssetsDown(
@@ -713,5 +712,6 @@ export function handleWithdraw(event: WithdrawEvent): void {
   withdraw.amountUSD = asset.getAmountUSD(event.params.assets);
   withdraw.shares = event.params.shares;
   withdraw.metaMorpho = mm.id;
+  withdraw.metaMorphoPosition = position.id;
   withdraw.save();
 }
