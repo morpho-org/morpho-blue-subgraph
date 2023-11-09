@@ -2014,6 +2014,8 @@ type MetaMorpho @entity {
   feeAccrued: BigInt!
   feeAccruedAssets: BigInt!
 
+  rate: InterestRate!
+
   lastTotalAssets: BigInt!
   totalShares: BigInt!
   idle: BigInt!
@@ -2029,6 +2031,9 @@ type MetaMorpho @entity {
   pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorpho")
 
   markets: [MetaMorphoMarket!]! @derivedFrom(field: "metaMorpho")
+
+  account: Account!
+
 
 }
 type FeeRecipient @entity {

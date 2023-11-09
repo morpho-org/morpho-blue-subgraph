@@ -2,7 +2,6 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   FeeRecipient,
-  MetaMorpho,
   MetaMorphoMarket,
   NewQueue,
   PendingCap,
@@ -41,27 +40,14 @@ import {
 
 import { toAssetsDown } from "./maths/shares";
 import { AccountManager } from "./sdk/account";
-import { PendingValueStatus, QueueType } from "./sdk/metamorpho";
+import {
+  loadMetaMorpho,
+  loadMetaMorphoMarket,
+  PendingValueStatus,
+  QueueType,
+  updateMMRate,
+} from "./sdk/metamorpho";
 
-function loadMetaMorpho(address: Address): MetaMorpho {
-  const mm = MetaMorpho.load(address);
-  if (!mm) {
-    log.critical("MetaMorpho {} not found", [address.toHexString()]);
-  }
-  return mm!;
-}
-function loadMetaMorphoMarket(
-  address: Address,
-  marketId: Bytes
-): MetaMorphoMarket {
-  const mmMarket = MetaMorphoMarket.load(address.concat(marketId));
-  if (!mmMarket) {
-    log.critical("MetaMorphoMarket {} not found", [
-      address.concat(marketId).toHexString(),
-    ]);
-  }
-  return mmMarket!;
-}
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   const mm = loadMetaMorpho(event.address);
   mm.feeAccrued = mm.feeAccrued.plus(event.params.feeShares);
@@ -97,6 +83,9 @@ export function handleApproval(event: ApprovalEvent): void {}
 export function handleDeposit(event: DepositEvent): void {
   const mm = loadMetaMorpho(event.address);
   mm.totalShares = mm.totalShares.plus(event.params.shares);
+  mm.save();
+
+  updateMMRate(event.address);
 }
 
 export function handleEIP712DomainChanged(
@@ -494,7 +483,9 @@ export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
   mm.save();
 }
 
-export function handleTransfer(event: TransferEvent): void {}
+export function handleTransfer(event: TransferEvent): void {
+  updateMMRate(event.address);
+}
 
 export function handleTransferRewards(event: TransferRewardsEvent): void {}
 
@@ -510,4 +501,6 @@ export function handleWithdraw(event: WithdrawEvent): void {
   const mm = loadMetaMorpho(event.address);
   mm.totalShares = mm.totalShares.minus(event.params.shares);
   mm.save();
+
+  updateMMRate(event.address);
 }

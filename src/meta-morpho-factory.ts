@@ -1,10 +1,12 @@
-import { BigInt } from "@graphprotocol/graph-ts";
+import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { CreateMetaMorpho as CreateMetaMorphoEvent } from "../generated/MetaMorphoFactory/MetaMorphoFactory";
-import { MetaMorpho } from "../generated/schema";
+import { InterestRate, MetaMorpho } from "../generated/schema";
 import { MetaMorpho as MetaMorphoTemplate } from "../generated/templates";
 
+import { getZeroMarket } from "./initializers/markets";
 import { AccountManager } from "./sdk/account";
+import { InterestRateSide, InterestRateType } from "./sdk/constants";
 import { TokenManager } from "./sdk/token";
 
 export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
@@ -33,5 +35,19 @@ export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
 
   metaMorpho.supplyQueue = [];
   metaMorpho.withdrawQueue = [];
+
+  const rate = new InterestRate(metaMorpho.id.toHexString() + "-supply");
+  rate.rate = BigDecimal.zero();
+  rate.market = getZeroMarket(event).id;
+  rate.type = InterestRateType.VARIABLE;
+  rate.side = InterestRateSide.LENDER;
+  rate.save();
+
+  metaMorpho.rate = rate.id;
+
+  metaMorpho.account = new AccountManager(
+    event.params.metaMorpho
+  ).getAccount().id;
+
   metaMorpho.save();
 }
