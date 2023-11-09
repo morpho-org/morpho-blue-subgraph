@@ -7,6 +7,8 @@ import {
   MetaMorphoDeposit,
   MetaMorphoMarket,
   MetaMorphoPosition,
+  MetaMorphoTransfer,
+  MetaMorphoWithdraw,
   NewQueue,
   PendingCap,
   PendingGuardian,
@@ -112,8 +114,6 @@ export function handleDeposit(event: DepositEvent): void {
   position.lastAssetsBalanceUSD = token.getAmountUSD(toAssets);
 
   position.save();
-
-  updateMMRate(event.address);
 
   const deposit = new MetaMorphoDeposit(
     event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
@@ -674,5 +674,42 @@ export function handleWithdraw(event: WithdrawEvent): void {
   mm.totalShares = mm.totalShares.minus(event.params.shares);
   mm.save();
 
-  updateMMRate(event.address);
+  const positionID = event.address.concat(event.params.owner);
+  const position = MetaMorphoPosition.load(positionID);
+  if (!position) {
+    log.critical("MetaMorphoPosition {} not found", [positionID.toHexString()]);
+    return;
+  }
+  position.shares = position.shares.minus(event.params.shares);
+  const totalAssets = toAssetsDown(
+    position.shares,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  position.lastAssetsBalance = totalAssets;
+  const asset = new TokenManager(mm.asset, event);
+  position.lastAssetsBalanceUSD = asset.getAmountUSD(totalAssets);
+  position.save();
+
+  const withdraw = new MetaMorphoWithdraw(
+    event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
+  );
+  withdraw.hash = event.transaction.hash;
+  withdraw.nonce = event.transaction.nonce;
+  withdraw.logIndex = event.logIndex.toI32();
+  withdraw.gasPrice = event.transaction.gasPrice;
+  withdraw.gasUsed = event.receipt ? event.receipt!.gasUsed : null;
+  withdraw.gasLimit = event.transaction.gasLimit;
+  withdraw.blockNumber = event.block.number;
+  withdraw.timestamp = event.block.timestamp;
+  withdraw.account = position.account;
+  withdraw.accountActor = new AccountManager(
+    event.params.sender
+  ).getAccount().id;
+  withdraw.asset = mm.asset;
+  withdraw.amount = event.params.assets;
+  withdraw.amountUSD = asset.getAmountUSD(event.params.assets);
+  withdraw.shares = event.params.shares;
+  withdraw.metaMorpho = mm.id;
+  withdraw.save();
 }
