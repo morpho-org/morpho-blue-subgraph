@@ -267,7 +267,12 @@ export function handleSetCap(event: SetCapEvent): void {
   mmMarket.save();
 }
 
-export function handleSetCurator(event: SetCuratorEvent): void {}
+export function handleSetCurator(event: SetCuratorEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  const curator = new AccountManager(event.params.newCurator).getAccount();
+  mm.curator = curator.id;
+  mm.save();
+}
 
 export function handleSetFee(event: SetFeeEvent): void {
   const mm = loadMetaMorpho(event.address);
