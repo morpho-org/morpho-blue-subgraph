@@ -1,7 +1,9 @@
 import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
+  AllocatorSet,
   FeeRecipient,
+  MetaMorphoAllocator,
   MetaMorphoDeposit,
   MetaMorphoMarket,
   MetaMorphoPosition,
@@ -327,7 +329,43 @@ export function handleSetGuardian(event: SetGuardianEvent): void {
   mm.save();
 }
 
-export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {}
+export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
+  const mm = loadMetaMorpho(event.address);
+
+  const allocatorId = event.params.allocator.concat(event.address);
+  let allocator = MetaMorphoAllocator.load(allocatorId);
+  if (!allocator) {
+    allocator = new MetaMorphoAllocator(allocatorId);
+    allocator.account = new AccountManager(
+      event.params.allocator
+    ).getAccount().id;
+    allocator.metaMorpho = mm.id;
+    allocator.save();
+  }
+  allocator.isCurrentAllocator = event.params.isAllocator;
+  allocator.save();
+
+  const allocatorSet = new AllocatorSet(
+    event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
+  );
+  allocatorSet.hash = event.transaction.hash;
+  allocatorSet.nonce = event.transaction.nonce;
+  allocatorSet.logIndex = event.logIndex.toI32();
+  allocatorSet.gasPrice = event.transaction.gasPrice;
+  allocatorSet.gasUsed = event.receipt ? event.receipt!.gasUsed : null;
+  allocatorSet.gasLimit = event.transaction.gasLimit;
+  allocatorSet.blockNumber = event.block.number;
+  allocatorSet.timestamp = event.block.timestamp;
+  allocatorSet.accountActor = new AccountManager(
+    // TODO: use sender once redeployed
+    Address.zero()
+  ).getAccount().id;
+  allocatorSet.metaMorpho = mm.id;
+  allocatorSet.isAllocator = event.params.isAllocator;
+  allocatorSet.allocator = allocator.id;
+
+  allocatorSet.save();
+}
 
 export function handleSetRewardsRecipient(
   event: SetRewardsRecipientEvent

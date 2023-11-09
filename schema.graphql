@@ -2004,7 +2004,7 @@ type MetaMorpho @entity {
 
   owner: Account!
   curator: Account
-  allocators: [Account!]!
+  allocators: [MetaMorphoAllocator!]! @derivedFrom(field: "metaMorpho")
   guardian: Account
 
   timelock: BigInt!
@@ -2036,7 +2036,8 @@ type MetaMorpho @entity {
 
   account: Account!
 
-
+  allocatorSet: [AllocatorSet!]! @derivedFrom(field: "metaMorpho")
+  deposits: [MetaMorphoDeposit!]! @derivedFrom(field: "metaMorpho")
 }
 type FeeRecipient @entity {
   id: Bytes!
@@ -2122,8 +2123,13 @@ type MetaMorphoPosition @entity {
 
   deposits: [MetaMorphoDeposit!]! @derivedFrom(field: "metaMorphoPosition")
   # TODO: add closing and counter logic
+}
 
-
+type MetaMorphoAllocator @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  isCurrentAllocator: Boolean!
 }
 
 
@@ -2176,4 +2182,43 @@ type MetaMorphoDeposit implements Event @entity(immutable: true) @transaction {
   metaMorpho: MetaMorpho!
 
   shares: BigInt!
+}
+
+type AllocatorSet @entity {
+    id: Bytes!
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+
+  " Account that executed the transaction"
+  accountActor: Account
+
+  metaMorpho: MetaMorpho!
+  allocator: MetaMorphoAllocator!
+
+  isAllocator: Boolean!
 }
