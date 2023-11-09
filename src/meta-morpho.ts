@@ -547,7 +547,9 @@ export function handleSubmitGuardian(event: SubmitGuardianEvent): void {
 
   const pendingGuardian = new PendingGuardian(id);
   pendingGuardian.metaMorpho = mm.id;
-  pendingGuardian.guardian = event.params.newGuardian;
+  pendingGuardian.guardian = new AccountManager(
+    event.params.newGuardian
+  ).getAccount().id;
   pendingGuardian.submittedAt = event.block.timestamp;
   pendingGuardian.validAt = event.block.timestamp.plus(mm.timelock);
   pendingGuardian.status = PendingValueStatus.PENDING;

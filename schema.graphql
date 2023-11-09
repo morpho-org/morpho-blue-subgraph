@@ -1355,6 +1355,19 @@ type Account @entity @regularPolling {
   " All flashloan events where this account executed it "
   flashloans: [Flashloan!]! @derivedFrom(field: "account")
 
+  metaMorphoOwner: [MetaMorpho!]! @derivedFrom(field: "owner")
+  metaMorphoCurator: [MetaMorpho!]! @derivedFrom(field: "curator")
+  metaMorphoAllocator: [MetaMorphoAllocator!]! @derivedFrom(field: "account")
+  metaMorphoGuardian: [MetaMorpho!]! @derivedFrom(field: "guardian")
+  metaMorpho: [MetaMorpho!]! @derivedFrom(field: "account")
+  feeRecipient: [FeeRecipient!]! @derivedFrom(field: "account")
+  metaMorphoPositions: [MetaMorphoPosition!]! @derivedFrom(field: "account")
+  metaMorphoDeposit: [MetaMorphoDeposit!]! @derivedFrom(field: "account")
+  metaMorphoWithdraw: [MetaMorphoWithdraw!]! @derivedFrom(field: "account")
+  metaMorphoTransferFrom: [MetaMorphoTransfer!]! @derivedFrom(field: "from")
+  metaMorphoTransferTo: [MetaMorphoTransfer!]! @derivedFrom(field: "to")
+
+
 }
 
 # A position is defined as who has control over the collateral or debt
