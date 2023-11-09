@@ -2032,6 +2032,8 @@ type MetaMorpho @entity {
 
   markets: [MetaMorphoMarket!]! @derivedFrom(field: "metaMorpho")
 
+  positions: [MetaMorphoPosition!]! @derivedFrom(field: "metaMorpho")
+
   account: Account!
 
 
@@ -2106,4 +2108,71 @@ type NewQueue @entity {
   newQueue: [MetaMorphoMarket!]!
   removedMarkets: [MetaMorphoMarket!]!
   addedMarkets: [MetaMorphoMarket!]!
+}
+
+type MetaMorphoPosition @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  shares: BigInt!
+
+  lastAssetsBalance: BigInt!
+  lastAssetsBalanceUSD: BigDecimal
+
+  deposits: [MetaMorphoDeposit!]! @derivedFrom(field: "metaMorphoPosition")
+  # TODO: add closing and counter logic
+
+
+}
+
+
+type MetaMorphoDeposit implements Event @entity(immutable: true) @transaction {
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+  "Account where deposit was executed (e.g. a deposit on behalf of account)"
+  account: Account!
+
+  " Account that executed the deposit (e.g. a deposit on behalf of account) "
+  accountActor: Account
+
+  " Token deposited "
+  asset: Token!
+
+  " Amount of token deposited in native units "
+  amount: BigInt!
+
+  " Amount of token deposited in USD "
+  amountUSD: BigDecimal!
+
+  ##### Add Ons #####
+  metaMorphoPosition: MetaMorphoPosition!
+
+  metaMorpho: MetaMorpho!
+
+  shares: BigInt!
 }

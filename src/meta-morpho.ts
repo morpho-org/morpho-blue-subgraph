@@ -2,7 +2,9 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   FeeRecipient,
+  MetaMorphoDeposit,
   MetaMorphoMarket,
+  MetaMorphoPosition,
   NewQueue,
   PendingCap,
   PendingGuardian,
@@ -47,6 +49,7 @@ import {
   QueueType,
   updateMMRate,
 } from "./sdk/metamorpho";
+import { TokenManager } from "./sdk/token";
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   const mm = loadMetaMorpho(event.address);
@@ -85,7 +88,52 @@ export function handleDeposit(event: DepositEvent): void {
   mm.totalShares = mm.totalShares.plus(event.params.shares);
   mm.save();
 
+  const positionID = event.address.concat(event.params.owner);
+  let position = MetaMorphoPosition.load(positionID);
+  if (!position) {
+    position = new MetaMorphoPosition(positionID);
+    position.metaMorpho = mm.id;
+    position.account = new AccountManager(event.params.owner).getAccount().id;
+    position.shares = BigInt.zero();
+    position.save();
+  }
+  position.shares = position.shares.plus(event.params.shares);
+
+  const toAssets = toAssetsDown(
+    event.params.shares,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  position.lastAssetsBalance = toAssets;
+
+  const token = new TokenManager(mm.asset, event);
+  position.lastAssetsBalanceUSD = token.getAmountUSD(toAssets);
+
+  position.save();
+
   updateMMRate(event.address);
+
+  const deposit = new MetaMorphoDeposit(
+    event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
+  );
+  deposit.hash = event.transaction.hash;
+  deposit.nonce = event.transaction.nonce;
+  deposit.logIndex = event.logIndex.toI32();
+  deposit.gasPrice = event.transaction.gasPrice;
+  deposit.gasUsed = event.receipt ? event.receipt!.gasUsed : null;
+  deposit.gasLimit = event.transaction.gasLimit;
+  deposit.blockNumber = event.block.number;
+  deposit.timestamp = event.block.timestamp;
+  deposit.account = position.account;
+  deposit.accountActor = new AccountManager(
+    event.params.sender
+  ).getAccount().id;
+  deposit.asset = mm.asset;
+  deposit.amount = event.params.assets;
+  deposit.amountUSD = token.getAmountUSD(event.params.assets);
+  deposit.shares = event.params.shares;
+  deposit.metaMorpho = mm.id;
+  deposit.save();
 }
 
 export function handleEIP712DomainChanged(
