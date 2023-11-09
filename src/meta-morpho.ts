@@ -583,7 +583,80 @@ export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
 }
 
 export function handleTransfer(event: TransferEvent): void {
+  // each deposit / withdraw is emitting a transfer event
   updateMMRate(event.address);
+  if (
+    event.params.from.equals(Address.zero()) ||
+    event.params.to.equals(Address.zero())
+  ) {
+    // mint / burn transfer
+    return;
+  }
+  const mm = loadMetaMorpho(event.address);
+  const fromPositionID = event.address.concat(event.params.from);
+  const fromPosition = MetaMorphoPosition.load(fromPositionID);
+  if (!fromPosition) {
+    log.critical("MetaMorphoPosition {} not found", [
+      fromPositionID.toHexString(),
+    ]);
+    return;
+  }
+  fromPosition.shares = fromPosition.shares.minus(event.params.value);
+  const fromAssets = toAssetsDown(
+    fromPosition.shares,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  fromPosition.lastAssetsBalance = fromAssets;
+  const token = new TokenManager(mm.asset, event);
+  fromPosition.lastAssetsBalanceUSD = token.getAmountUSD(fromAssets);
+  fromPosition.save();
+
+  const toPositionID = event.address.concat(event.params.to);
+  let toPosition = MetaMorphoPosition.load(toPositionID);
+  if (!toPosition) {
+    toPosition = new MetaMorphoPosition(toPositionID);
+    toPosition.metaMorpho = mm.id;
+    toPosition.account = new AccountManager(event.params.to).getAccount().id;
+    toPosition.shares = BigInt.zero();
+    toPosition.save();
+  }
+  toPosition.shares = toPosition.shares.plus(event.params.value);
+  const toAssets = toAssetsDown(
+    toPosition.shares,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  toPosition.lastAssetsBalance = toAssets;
+  toPosition.lastAssetsBalanceUSD = token.getAmountUSD(toAssets);
+  toPosition.save();
+
+  const transfer = new MetaMorphoTransfer(
+    event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
+  );
+  transfer.hash = event.transaction.hash;
+  transfer.nonce = event.transaction.nonce;
+  transfer.logIndex = event.logIndex.toI32();
+  transfer.gasPrice = event.transaction.gasPrice;
+  transfer.gasUsed = event.receipt ? event.receipt!.gasUsed : null;
+  transfer.gasLimit = event.transaction.gasLimit;
+  transfer.blockNumber = event.block.number;
+  transfer.timestamp = event.block.timestamp;
+  transfer.from = fromPosition.account;
+  transfer.to = toPosition.account;
+  const underlyingAmount = toAssetsDown(
+    event.params.value,
+    mm.totalShares,
+    mm.lastTotalAssets
+  );
+  transfer.shares = event.params.value;
+  transfer.amount = underlyingAmount;
+  transfer.amountUSD = token.getAmountUSD(underlyingAmount);
+
+  transfer.metaMorphoPositionFrom = fromPosition.id;
+  transfer.metaMorphoPositionTo = toPosition.id;
+  transfer.metaMorpho = mm.id;
+  transfer.save();
 }
 
 export function handleTransferRewards(event: TransferRewardsEvent): void {}
