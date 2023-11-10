@@ -1355,6 +1355,19 @@ type Account @entity @regularPolling {
   " All flashloan events where this account executed it "
   flashloans: [Flashloan!]! @derivedFrom(field: "account")
 
+  metaMorphoOwner: [MetaMorpho!]! @derivedFrom(field: "owner")
+  metaMorphoCurator: [MetaMorpho!]! @derivedFrom(field: "curator")
+  metaMorphoAllocator: [MetaMorphoAllocator!]! @derivedFrom(field: "account")
+  metaMorphoGuardian: [MetaMorpho!]! @derivedFrom(field: "guardian")
+  metaMorpho: [MetaMorpho!]! @derivedFrom(field: "account")
+  feeRecipient: [FeeRecipient!]! @derivedFrom(field: "account")
+  metaMorphoPositions: [MetaMorphoPosition!]! @derivedFrom(field: "account")
+  metaMorphoDeposit: [MetaMorphoDeposit!]! @derivedFrom(field: "account")
+  metaMorphoWithdraw: [MetaMorphoWithdraw!]! @derivedFrom(field: "account")
+  metaMorphoTransferFrom: [MetaMorphoTransfer!]! @derivedFrom(field: "from")
+  metaMorphoTransferTo: [MetaMorphoTransfer!]! @derivedFrom(field: "to")
+
+
 }
 
 # A position is defined as who has control over the collateral or debt
@@ -1989,4 +2002,339 @@ type _ChainlinkAggregator @entity {
   id: Bytes!
   proxy: _ChainlinkProxy!
   isDeprecated: Boolean!
+}
+
+########### METAMORPHO ENTITIES ############
+
+
+type MetaMorpho @entity {
+  id: Bytes!
+  name: String!
+  symbol: String!
+  decimals: Int!
+
+  asset: Token!
+
+  owner: Account!
+  curator: Account
+  allocators: [MetaMorphoAllocator!]! @derivedFrom(field: "metaMorpho")
+  guardian: Account
+
+  timelock: BigInt!
+
+  fee: BigInt!
+  feeRecipient: FeeRecipient
+  feeAccrued: BigInt!
+  feeAccruedAssets: BigInt!
+
+  rate: InterestRate!
+
+  lastTotalAssets: BigInt!
+  totalShares: BigInt!
+  idle: BigInt!
+
+  supplyQueue: [MetaMorphoMarket!]!
+  withdrawQueue: [MetaMorphoMarket!]!
+
+  pendingTimelock: PendingTimelock @derivedFrom(field: "metaMorpho")
+  currentPendingTimelock: PendingTimelock
+  pendingGuardian: PendingGuardian @derivedFrom(field: "metaMorpho")
+  currentPendingGuardian: PendingGuardian
+
+  pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorpho")
+
+  markets: [MetaMorphoMarket!]! @derivedFrom(field: "metaMorpho")
+
+  positions: [MetaMorphoPosition!]! @derivedFrom(field: "metaMorpho")
+
+  account: Account!
+
+  allocatorSet: [AllocatorSet!]! @derivedFrom(field: "metaMorpho")
+  deposits: [MetaMorphoDeposit!]! @derivedFrom(field: "metaMorpho")
+  withdraws: [MetaMorphoWithdraw!]! @derivedFrom(field: "metaMorpho")
+  transfers: [MetaMorphoTransfer!]! @derivedFrom(field: "metaMorpho")
+}
+type FeeRecipient @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  isCurrentFeeRecipient: Boolean!
+  feeAccrued: BigInt!
+  feeAccruedAssets: BigInt!
+}
+
+type MetaMorphoMarket @entity {
+  id: Bytes!
+  metaMorpho: MetaMorpho!
+  market: Market!
+  cap: BigInt!
+  withdrawRank: BigInt!
+  currentPendingCap: PendingCap
+  isInSupplyQueue: Boolean!
+  isInWithdrawQueue: Boolean!
+  pendingCaps: [PendingCap!]! @derivedFrom(field: "metaMorphoMarket")
+#  TODO: add position
+}
+
+enum PendingValueStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+    OVERRIDDEN
+}
+
+type PendingTimelock @entity {
+  id: Bytes!
+  timelock: BigInt!
+  metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
+  validAt: BigInt!
+  status: PendingValueStatus!
+}
+
+type PendingCap @entity {
+  id: Bytes!
+  cap: BigInt!
+  metaMorpho: MetaMorpho!
+  metaMorphoMarket: MetaMorphoMarket!
+  isNewMarket: Boolean!
+  submittedAt: BigInt!
+  validAt: BigInt!
+  status: PendingValueStatus!
+}
+
+type PendingGuardian @entity {
+  id: Bytes!
+  guardian: Bytes!
+  metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
+  validAt: BigInt!
+  status: PendingValueStatus!
+}
+enum QueueType {
+  SUPPLY_QUEUE
+    WITHDRAW_QUEUE
+}
+type NewQueue @entity {
+  id: Bytes!
+  queueType: QueueType!
+  caller: Account!
+  metaMorpho: MetaMorpho!
+  submittedAt: BigInt!
+  previousQueue: [MetaMorphoMarket!]!
+  newQueue: [MetaMorphoMarket!]!
+  removedMarkets: [MetaMorphoMarket!]!
+  addedMarkets: [MetaMorphoMarket!]!
+}
+
+type MetaMorphoPosition @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  shares: BigInt!
+
+  lastAssetsBalance: BigInt!
+  lastAssetsBalanceUSD: BigDecimal
+
+  deposits: [MetaMorphoDeposit!]! @derivedFrom(field: "metaMorphoPosition")
+  metaMorphoPositionFrom: [MetaMorphoTransfer!]! @derivedFrom(field: "metaMorphoPositionFrom")
+  metaMorphoPositionTo: [MetaMorphoTransfer!]! @derivedFrom(field: "metaMorphoPositionTo")
+  # TODO: add closing and counter logic
+}
+
+type MetaMorphoAllocator @entity {
+  id: Bytes!
+  account: Account!
+  metaMorpho: MetaMorpho!
+  isCurrentAllocator: Boolean!
+}
+
+
+type MetaMorphoDeposit @entity(immutable: true) {
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+  "Account where deposit was executed (e.g. a deposit on behalf of account)"
+  account: Account!
+
+  " Account that executed the deposit (e.g. a deposit on behalf of account) "
+  accountActor: Account
+
+  " Token deposited "
+  asset: Token!
+
+  " Amount of token deposited in native units "
+  amount: BigInt!
+
+  " Amount of token deposited in USD "
+  amountUSD: BigDecimal!
+
+  ##### Add Ons #####
+  metaMorphoPosition: MetaMorphoPosition!
+
+  metaMorpho: MetaMorpho!
+
+  shares: BigInt!
+}
+
+type MetaMorphoWithdraw @entity(immutable: true) {
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+  "Account where deposit was executed (e.g. a deposit on behalf of account)"
+  account: Account!
+
+  " Account that executed the deposit (e.g. a deposit on behalf of account) "
+  accountActor: Account
+
+  " Token deposited "
+  asset: Token!
+
+  " Amount of token deposited in native units "
+  amount: BigInt!
+
+  " Amount of token deposited in USD "
+  amountUSD: BigDecimal!
+
+  ##### Add Ons #####
+  metaMorphoPosition: MetaMorphoPosition!
+
+  metaMorpho: MetaMorpho!
+
+  shares: BigInt!
+}
+
+type AllocatorSet @entity(immutable: true) {
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+
+  " Account that executed the transaction"
+  accountActor: Account
+
+  metaMorpho: MetaMorpho!
+  allocator: MetaMorphoAllocator!
+
+  isAllocator: Boolean!
+}
+
+type MetaMorphoTransfer @entity(immutable: true) {
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
+
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
+
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
+
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
+
+  " Price of gas in this transaction "
+  gasPrice: BigInt
+
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
+
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
+
+  " Block number of this event "
+  blockNumber: BigInt!
+
+  " Timestamp of this event "
+  timestamp: BigInt!
+
+  "Account where deposit was executed (e.g. a deposit on behalf of account)"
+  from: Account!
+
+  to: Account!
+
+  " Amount of token deposited in native units "
+  amount: BigInt!
+  shares: BigInt!
+
+  " Amount of token deposited in USD "
+  amountUSD: BigDecimal!
+
+  ##### Add Ons #####
+  metaMorphoPositionFrom: MetaMorphoPosition!
+
+  metaMorphoPositionTo: MetaMorphoPosition!
+
+  metaMorpho: MetaMorpho!
+
 }

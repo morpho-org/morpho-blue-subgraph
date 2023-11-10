@@ -1,10 +1,8 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 
-import { BIGINT_WAD } from "../sdk/constants";
-
 import { mulDivDown, mulDivUp } from "./maths";
 
-const VIRTUAL_SHARES = BIGINT_WAD;
+const VIRTUAL_SHARES = BigInt.fromI32(10).pow(6);
 const VIRTUAL_ASSETS = BigInt.zero();
 
 export function toAssetsUp(

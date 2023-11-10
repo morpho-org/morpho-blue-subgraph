@@ -47,6 +47,17 @@ export class PositionManager {
     this._side = side;
   }
 
+  getPosition(): Position | null {
+    let positionCounter = _PositionCounter.load(this._counterID);
+    if (!positionCounter) {
+      return null;
+    }
+    const positionID = positionCounter.id
+      .concat("-")
+      .concat(positionCounter.nextCount.toString());
+
+    return Position.load(positionID);
+  }
   addCollateralPosition(
     event: ethereum.Event,
     amountSupplied: BigInt
