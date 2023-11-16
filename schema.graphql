@@ -2068,7 +2068,8 @@ type MetaMorphoMarket @entity {
   metaMorpho: MetaMorpho!
   market: Market!
   cap: BigInt!
-  withdrawRank: BigInt!
+  enabled: Boolean!
+  removableAt: BigInt!
   currentPendingCap: PendingCap
   isInSupplyQueue: Boolean!
   isInWithdrawQueue: Boolean!

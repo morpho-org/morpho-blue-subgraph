@@ -27,21 +27,24 @@ import {
   SetFeeRecipient as SetFeeRecipientEvent,
   SetGuardian as SetGuardianEvent,
   SetIsAllocator as SetIsAllocatorEvent,
-  SetRewardsRecipient as SetRewardsRecipientEvent,
+  SetSkimRecipient as SetSkimRecipientEvent,
   SetSupplyQueue as SetSupplyQueueEvent,
   SetTimelock as SetTimelockEvent,
   SetWithdrawQueue as SetWithdrawQueueEvent,
   SubmitCap as SubmitCapEvent,
-  SubmitFee as SubmitFeeEvent,
   SubmitGuardian as SubmitGuardianEvent,
   SubmitTimelock as SubmitTimelockEvent,
   Transfer as TransferEvent,
-  TransferRewards as TransferRewardsEvent,
+  Skim as SkimEvent,
   UpdateLastTotalAssets as UpdateLastTotalAssetsEvent,
   Withdraw as WithdrawEvent,
-  RevokeCap,
-  RevokeGuardian,
-  RevokeTimelock,
+  RevokePendingCap as RevokePendingCapEvent,
+  SubmitMarketRemoval as SubmitMarketRemovalEvent,
+  RevokePendingGuardian as RevokePendingGuardianEvent,
+  RevokePendingMarketRemoval as RevokePendingMarketRemovalEvent,
+  RevokePendingTimelock as RevokePendingTimelockEvent,
+  ReallocateSupply as ReallocateSupplyEvent,
+  ReallocateWithdraw as ReallocateWithdrawEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
 import { toAssetsDown } from "./maths/shares";
@@ -49,11 +52,38 @@ import { AccountManager } from "./sdk/account";
 import {
   loadMetaMorpho,
   loadMetaMorphoMarket,
+  loadMetaMorphoMarketFromId,
   PendingValueStatus,
   QueueType,
   updateMMRate,
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
+
+export function handleSubmitMarketRemoval(
+  event: SubmitMarketRemovalEvent
+): void {
+  const mm = loadMetaMorpho(event.address);
+  const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
+
+  mmMarket.removableAt = event.block.timestamp.plus(mm.timelock);
+  mmMarket.save();
+  // TODO: add pending removal entity
+}
+export function handleRevokePendingMarketRemoval(
+  event: RevokePendingMarketRemovalEvent
+): void {
+  const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
+  mmMarket.removableAt = BigInt.zero();
+  mmMarket.save();
+}
+
+export function handleReallocateWithdraw(
+  event: ReallocateWithdrawEvent
+): void {}
+
+export function handleReallocateSupply(event: ReallocateSupplyEvent): void {}
+
+export function handleSkim(event: SkimEvent): void {}
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   const mm = loadMetaMorpho(event.address);
@@ -62,6 +92,7 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
   const feeAssets = toAssetsDown(
     event.params.feeShares,
     mm.totalShares,
+    // This is taking the last total assets, not the current one
     mm.lastTotalAssets
   );
   mm.feeAccruedAssets = mm.feeAccruedAssets.plus(feeAssets);
@@ -153,16 +184,8 @@ export function handleOwnershipTransferred(
   mm.owner = event.params.newOwner;
   mm.save();
 }
-//
-// export function handleReallocateIdle(event: ReallocateIdleEvent): void {}
-//
-// export function handleReallocateSupply(event: ReallocateSupplyEvent): void {}
-//
-// export function handleReallocateWithdraw(
-//   event: ReallocateWithdrawEvent
-// ): void {}
 
-export function handleRevokePendingCap(event: RevokeCap): void {
+export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
   const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
 
   if (!mmMarket.currentPendingCap) {
@@ -186,7 +209,9 @@ export function handleRevokePendingCap(event: RevokeCap): void {
   mmMarket.save();
 }
 
-export function handleRevokePendingGuardian(event: RevokeGuardian): void {
+export function handleRevokePendingGuardian(
+  event: RevokePendingGuardianEvent
+): void {
   const mm = loadMetaMorpho(event.address);
   if (!mm.currentPendingGuardian) {
     log.critical("MetaMorpho {} has no pending guardian", [
@@ -208,7 +233,9 @@ export function handleRevokePendingGuardian(event: RevokeGuardian): void {
   mm.save();
 }
 
-export function handleRevokePendingTimelock(event: RevokeTimelock): void {
+export function handleRevokePendingTimelock(
+  event: RevokePendingTimelockEvent
+): void {
   const mm = loadMetaMorpho(event.address);
   if (!mm.currentPendingTimelock) {
     log.critical("MetaMorpho {} has no pending timelock", [
@@ -244,9 +271,10 @@ export function handleSetCap(event: SetCapEvent): void {
     mm.withdrawQueue = withdrawQueue;
 
     mm.save();
-    mmMarket.withdrawRank = BigInt.fromI32(mm.withdrawQueue.length);
+    mmMarket.removableAt = BigInt.zero();
     mmMarket.isInSupplyQueue = true;
     mmMarket.isInWithdrawQueue = true;
+    mmMarket.enabled = true;
     mmMarket.save();
   }
 
@@ -367,9 +395,7 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
   allocatorSet.save();
 }
 
-export function handleSetRewardsRecipient(
-  event: SetRewardsRecipientEvent
-): void {}
+export function handleSetSkimRecipient(event: SetSkimRecipientEvent): void {}
 
 export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   // Supply queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
@@ -380,6 +406,7 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   for (let i = 0; i < event.params.newSupplyQueue.length; i++) {
     const mmMarket = loadMetaMorphoMarket(
       event.address,
+      // The event contains a list of market ids, not MetaMorphoMarket ids
       event.params.newSupplyQueue[i]
     );
     if (!mmMarket.isInSupplyQueue) {
@@ -393,7 +420,7 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   const removedMarkets: Array<Bytes> = [];
   for (let i = 0; i < mm.supplyQueue.length; i++) {
     if (!seen.has(mm.supplyQueue[i])) {
-      const mmMarket = loadMetaMorphoMarket(event.address, mm.supplyQueue[i]);
+      const mmMarket = loadMetaMorphoMarketFromId(mm.supplyQueue[i]);
       mmMarket.isInSupplyQueue = false;
       mmMarket.save();
       removedMarkets.push(mmMarket.id);
@@ -406,8 +433,7 @@ export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
       .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
   );
   newQueue.queueType = QueueType.SUPPLY_QUEUE;
-  // TODO: add caller once redeployed
-  newQueue.caller = new AccountManager(Address.zero()).getAccount().id;
+  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
   newQueue.metaMorpho = mm.id;
   newQueue.submittedAt = event.block.timestamp;
   newQueue.removedMarkets = removedMarkets;
@@ -451,10 +477,9 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
   for (let i = 0; i < event.params.newWithdrawQueue.length; i++) {
     const mmMarket = loadMetaMorphoMarket(
       event.address,
+      // The event contains a list of market ids, not MetaMorphoMarket ids
       event.params.newWithdrawQueue[i]
     );
-    mmMarket.withdrawRank = BigInt.fromI32(i + 1);
-    mmMarket.save();
     seen.set(mmMarket.id, true);
     newWithdrawQueue.push(mmMarket.id);
   }
@@ -462,8 +487,8 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
   for (let i = 0; i < mm.withdrawQueue.length; i++) {
     if (!seen.has(mm.withdrawQueue[i])) {
       // TODO: we can add a check that the supply on the market is 0
-      const mmMarket = loadMetaMorphoMarket(event.address, mm.withdrawQueue[i]);
-      mmMarket.withdrawRank = BigInt.zero();
+      const mmMarket = loadMetaMorphoMarketFromId(mm.withdrawQueue[i]);
+      mmMarket.enabled = false;
       mmMarket.isInWithdrawQueue = false;
       mmMarket.save();
       removedMarkets.push(mmMarket.id);
@@ -476,8 +501,7 @@ export function handleSetWithdrawQueue(event: SetWithdrawQueueEvent): void {
       .concat(Bytes.fromI32(event.transactionLogIndex.toI32()))
   );
   newQueue.queueType = QueueType.WITHDRAW_QUEUE;
-  // TODO: add caller once redeployed
-  newQueue.caller = new AccountManager(Address.zero()).getAccount().id;
+  newQueue.caller = new AccountManager(event.params.caller).getAccount().id;
   newQueue.metaMorpho = mm.id;
   newQueue.submittedAt = event.block.timestamp;
   newQueue.removedMarkets = removedMarkets;
@@ -519,17 +543,14 @@ export function handleSubmitCap(event: SubmitCapEvent): void {
     metaMorphoMarket = new MetaMorphoMarket(mmMarketId);
     metaMorphoMarket.metaMorpho = mm.id;
     metaMorphoMarket.cap = BigInt.zero();
+    metaMorphoMarket.removableAt = BigInt.zero();
     metaMorphoMarket.market = event.params.id;
-    metaMorphoMarket.withdrawRank = BigInt.zero();
+    metaMorphoMarket.enabled = false;
     metaMorphoMarket.isInSupplyQueue = false;
     metaMorphoMarket.isInWithdrawQueue = false;
   }
   metaMorphoMarket.currentPendingCap = pendingCap.id;
   metaMorphoMarket.save();
-}
-
-export function handleSubmitFee(event: SubmitFeeEvent): void {
-  // Fee submission is no longer subject to a timelock, will be removed in last update.
 }
 
 export function handleSubmitGuardian(event: SubmitGuardianEvent): void {
@@ -660,7 +681,7 @@ export function handleTransfer(event: TransferEvent): void {
   transfer.save();
 }
 
-export function handleTransferRewards(event: TransferRewardsEvent): void {}
+export function handleTransferRewards(event: SkimEvent): void {}
 
 export function handleUpdateLastTotalAssets(
   event: UpdateLastTotalAssetsEvent
