@@ -64,6 +64,16 @@
   },
   {
     "inputs": [],
+    "name": "AllCapsReached",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyPending",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "AlreadySet",
     "type": "error"
   },
@@ -325,7 +335,7 @@
   },
   {
     "inputs": [],
-    "name": "InsufficientIdle",
+    "name": "InconsistentReallocation",
     "type": "error"
   },
   {
@@ -345,6 +355,39 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidMarketRemovalNonZeroCap",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidMarketRemovalNonZeroSupply",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidMarketRemovalTimelockNotElapsed",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "InvalidShortString",
     "type": "error"
@@ -352,6 +395,11 @@
   {
     "inputs": [],
     "name": "MarketNotCreated",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MarketNotEnabled",
     "type": "error"
   },
   {
@@ -366,18 +414,7 @@
   },
   {
     "inputs": [],
-    "name": "MaxQueueSizeExceeded",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "MissingMarket",
+    "name": "MaxQueueLengthExceeded",
     "type": "error"
   },
   {
@@ -392,12 +429,17 @@
   },
   {
     "inputs": [],
+    "name": "NotCuratorNorGuardianRole",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "NotCuratorRole",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "NotGuardian",
+    "name": "NotGuardianRole",
     "type": "error"
   },
   {
@@ -469,11 +511,6 @@
       }
     ],
     "name": "SupplyCapExceeded",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "TimelockExpirationExceeded",
     "type": "error"
   },
   {
@@ -626,7 +663,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "guardian",
+        "name": "caller",
         "type": "address"
       },
       {
@@ -636,25 +673,19 @@
         "type": "bytes32"
       },
       {
-        "components": [
-          {
-            "internalType": "uint192",
-            "name": "value",
-            "type": "uint192"
-          },
-          {
-            "internalType": "uint64",
-            "name": "submittedAt",
-            "type": "uint64"
-          }
-        ],
         "indexed": false,
-        "internalType": "struct PendingUint192",
-        "name": "pendingCap",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "suppliedAssets",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "suppliedShares",
+        "type": "uint256"
       }
     ],
-    "name": "RevokeCap",
+    "name": "ReallocateSupply",
     "type": "event"
   },
   {
@@ -663,29 +694,29 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "guardian",
+        "name": "caller",
         "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "value",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "submittedAt",
-            "type": "uint96"
-          }
-        ],
+        "indexed": true,
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
         "indexed": false,
-        "internalType": "struct PendingAddress",
-        "name": "pendingGuardian",
-        "type": "tuple"
+        "internalType": "uint256",
+        "name": "withdrawnAssets",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "withdrawnShares",
+        "type": "uint256"
       }
     ],
-    "name": "RevokeGuardian",
+    "name": "ReallocateWithdraw",
     "type": "event"
   },
   {
@@ -694,34 +725,73 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "guardian",
+        "name": "caller",
         "type": "address"
       },
       {
-        "components": [
-          {
-            "internalType": "uint192",
-            "name": "value",
-            "type": "uint192"
-          },
-          {
-            "internalType": "uint64",
-            "name": "submittedAt",
-            "type": "uint64"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct PendingUint192",
-        "name": "pendingTimelock",
-        "type": "tuple"
+        "indexed": true,
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
       }
     ],
-    "name": "RevokeTimelock",
+    "name": "RevokePendingCap",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "RevokePendingGuardian",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RevokePendingMarketRemoval",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      }
+    ],
+    "name": "RevokePendingTimelock",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
       {
         "indexed": true,
         "internalType": "Id",
@@ -755,6 +825,12 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "newFee",
@@ -780,6 +856,12 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
       {
         "indexed": true,
         "internalType": "address",
@@ -815,11 +897,11 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "newRewardsRecipient",
+        "name": "newSkimRecipient",
         "type": "address"
       }
     ],
-    "name": "SetRewardsRecipient",
+    "name": "SetSkimRecipient",
     "type": "event"
   },
   {
@@ -828,7 +910,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "allocator",
+        "name": "caller",
         "type": "address"
       },
       {
@@ -845,6 +927,12 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "newTimelock",
@@ -860,7 +948,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "allocator",
+        "name": "caller",
         "type": "address"
       },
       {
@@ -876,6 +964,37 @@
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Skim",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
       {
         "indexed": true,
         "internalType": "Id",
@@ -896,13 +1015,13 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "newFee",
-        "type": "uint256"
+        "indexed": true,
+        "internalType": "address",
+        "name": "newGuardian",
+        "type": "address"
       }
     ],
-    "name": "SubmitFee",
+    "name": "SubmitGuardian",
     "type": "event"
   },
   {
@@ -911,11 +1030,17 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "newGuardian",
+        "name": "caller",
         "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
       }
     ],
-    "name": "SubmitGuardian",
+    "name": "SubmitMarketRemoval",
     "type": "event"
   },
   {
@@ -954,37 +1079,6 @@
       }
     ],
     "name": "Transfer",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "rewardsRecipient",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "TransferRewards",
     "type": "event"
   },
   {
@@ -1072,13 +1166,6 @@
       }
     ],
     "name": "acceptCap",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "acceptFee",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1200,9 +1287,14 @@
         "type": "uint192"
       },
       {
-        "internalType": "uint64",
-        "name": "withdrawRank",
-        "type": "uint64"
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint56",
+        "name": "removableAt",
+        "type": "uint56"
       }
     ],
     "stateMutability": "view",
@@ -1373,19 +1465,6 @@
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "idle",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1603,27 +1682,9 @@
         "type": "uint192"
       },
       {
-        "internalType": "uint64",
-        "name": "submittedAt",
-        "type": "uint64"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "pendingFee",
-    "outputs": [
-      {
-        "internalType": "uint192",
-        "name": "value",
-        "type": "uint192"
-      },
-      {
-        "internalType": "uint64",
-        "name": "submittedAt",
-        "type": "uint64"
+        "internalType": "uint56",
+        "name": "validAt",
+        "type": "uint56"
       }
     ],
     "stateMutability": "view",
@@ -1639,9 +1700,9 @@
         "type": "address"
       },
       {
-        "internalType": "uint96",
-        "name": "submittedAt",
-        "type": "uint96"
+        "internalType": "uint56",
+        "name": "validAt",
+        "type": "uint56"
       }
     ],
     "stateMutability": "view",
@@ -1670,9 +1731,9 @@
         "type": "uint192"
       },
       {
-        "internalType": "uint64",
-        "name": "submittedAt",
-        "type": "uint64"
+        "internalType": "uint56",
+        "name": "validAt",
+        "type": "uint56"
       }
     ],
     "stateMutability": "view",
@@ -1837,64 +1898,10 @@
             "internalType": "uint256",
             "name": "assets",
             "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "shares",
-            "type": "uint256"
           }
         ],
         "internalType": "struct MarketAllocation[]",
-        "name": "withdrawn",
-        "type": "tuple[]"
-      },
-      {
-        "components": [
-          {
-            "components": [
-              {
-                "internalType": "address",
-                "name": "loanToken",
-                "type": "address"
-              },
-              {
-                "internalType": "address",
-                "name": "collateralToken",
-                "type": "address"
-              },
-              {
-                "internalType": "address",
-                "name": "oracle",
-                "type": "address"
-              },
-              {
-                "internalType": "address",
-                "name": "irm",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "lltv",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct MarketParams",
-            "name": "marketParams",
-            "type": "tuple"
-          },
-          {
-            "internalType": "uint256",
-            "name": "assets",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "shares",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct MarketAllocation[]",
-        "name": "supplied",
+        "name": "allocations",
         "type": "tuple[]"
       }
     ],
@@ -1947,36 +1954,36 @@
         "type": "bytes32"
       }
     ],
-    "name": "revokeCap",
+    "name": "revokePendingCap",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "revokeGuardian",
+    "name": "revokePendingGuardian",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "revokeTimelock",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardsRecipient",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
       }
     ],
-    "stateMutability": "view",
+    "name": "revokePendingMarketRemoval",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "revokePendingTimelock",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1988,6 +1995,19 @@
       }
     ],
     "name": "setCurator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "setFee",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2027,11 +2047,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "newRewardsRecipient",
+        "name": "newSkimRecipient",
         "type": "address"
       }
     ],
-    "name": "setRewardsRecipient",
+    "name": "setSkimRecipient",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2052,14 +2072,27 @@
   {
     "inputs": [
       {
-        "internalType": "uint256[]",
-        "name": "indexes",
-        "type": "uint256[]"
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       }
     ],
-    "name": "sortWithdrawQueue",
+    "name": "skim",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "skimRecipient",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -2110,12 +2143,12 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "newFee",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "newGuardian",
+        "type": "address"
       }
     ],
-    "name": "submitFee",
+    "name": "submitGuardian",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2123,12 +2156,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "newGuardian",
-        "type": "address"
+        "internalType": "Id",
+        "name": "id",
+        "type": "bytes32"
       }
     ],
-    "name": "submitGuardian",
+    "name": "submitMarketRemoval",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2167,7 +2200,7 @@
   },
   {
     "inputs": [],
-    "name": "supplyQueueSize",
+    "name": "supplyQueueLength",
     "outputs": [
       {
         "internalType": "uint256",
@@ -2299,12 +2332,12 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
+        "internalType": "uint256[]",
+        "name": "indexes",
+        "type": "uint256[]"
       }
     ],
-    "name": "transferRewards",
+    "name": "updateWithdrawQueue",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2359,7 +2392,7 @@
   },
   {
     "inputs": [],
-    "name": "withdrawQueueSize",
+    "name": "withdrawQueueLength",
     "outputs": [
       {
         "internalType": "uint256",

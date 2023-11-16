@@ -32,6 +32,13 @@ export function loadMetaMorpho(address: Address): MetaMorpho {
   }
   return mm!;
 }
+export function loadMetaMorphoMarketFromId(id: Bytes): MetaMorphoMarket {
+  const mmMarket = MetaMorphoMarket.load(id);
+  if (!mmMarket) {
+    log.critical("MetaMorphoMarket {} not found", [id.toHexString()]);
+  }
+  return mmMarket!;
+}
 export function loadMetaMorphoMarket(
   address: Address,
   marketId: Bytes

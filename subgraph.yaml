@@ -6,9 +6,9 @@ dataSources:
     name: MorphoBlue
     network: goerli
     source:
-      address: "0xC850a9C14454131aE82C28DC7ff51c2dc6ace06e"
+      address: "0x64c7044050Ba0431252df24fEd4d9635a275CB41"
       abi: MorphoBlue
-      startBlock: 9767646
+      startBlock: 10038133
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -85,9 +85,9 @@ dataSources:
     name: MetaMorphoFactory
     network: goerli
     source:
-      address: "0x2201C2c5279699ac8d3654349722E4C1D6648A17"
+      address: "0x75F40875af97710e758330F595A22F8319523A23"
       abi: MetaMorphoFactory
-      startBlock: 9955952
+      startBlock: 10040955
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -114,6 +114,7 @@ dataSources:
             address,string,string,bytes32)
           handler: handleCreateMetaMorpho
       file: ./src/meta-morpho-factory.ts
+
 templates:
   - kind: ethereum
     name: MetaMorpho
@@ -131,11 +132,11 @@ templates:
         - EIP712DomainChanged
         - OwnershipTransferStarted
         - OwnershipTransferred
-        - ReallocateIdle
         - ReallocateSupply
         - ReallocateWithdraw
         - RevokePendingCap
         - RevokePendingGuardian
+        - RevokePendingMarketRemoval
         - RevokePendingTimelock
         - SetCap
         - SetCurator
@@ -143,16 +144,16 @@ templates:
         - MetaMorphoSetFeeRecipient
         - SetGuardian
         - SetIsAllocator
-        - SetRewardsRecipient
+        - SetSkimRecipient
         - SetSupplyQueue
         - SetTimelock
         - SetWithdrawQueue
+        - Skim
         - SubmitCap
-        - SubmitFee
         - SubmitGuardian
+        - SubmitMarketRemoval
         - SubmitTimelock
         - Transfer
-        - TransferRewards
         - UpdateLastTotalAssets
         - MetaMorphoWithdraw
       abis:
@@ -175,50 +176,51 @@ templates:
           handler: handleOwnershipTransferStarted
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
-#        - event: ReallocateIdle(indexed address,uint256)
-#          handler: handleReallocateIdle
-#        - event: ReallocateSupply(indexed address,indexed bytes32,uint256,uint256)
-#          handler: handleReallocateSupply
-#        - event: ReallocateWithdraw(indexed address,indexed bytes32,uint256,uint256)
-#          handler: handleReallocateWithdraw
-        - event: RevokeCap(indexed address,indexed bytes32,(uint192,uint64))
+        - event: ReallocateSupply(indexed address,indexed bytes32,uint256,uint256)
+          handler: handleReallocateSupply
+        - event: ReallocateWithdraw(indexed address,indexed bytes32,uint256,uint256)
+          handler: handleReallocateWithdraw
+        - event: RevokePendingCap(indexed address,indexed bytes32)
           handler: handleRevokePendingCap
-        - event: RevokeGuardian(indexed address,(address,uint96))
+        - event: RevokePendingGuardian(indexed address)
           handler: handleRevokePendingGuardian
-        - event: RevokeTimelock(indexed address,(uint192,uint64))
+        - event: RevokePendingMarketRemoval(indexed address,indexed bytes32)
+          handler: handleRevokePendingMarketRemoval
+          # TODO: add submit market removal
+        - event: RevokePendingTimelock(indexed address)
           handler: handleRevokePendingTimelock
-        - event: SetCap(indexed bytes32,uint256)
+        - event: SetCap(indexed address,indexed bytes32,uint256)
           handler: handleSetCap
         - event: SetCurator(indexed address)
           handler: handleSetCurator
-        - event: SetFee(uint256)
+        - event: SetFee(indexed address,uint256)
           handler: handleSetFee
         - event: SetFeeRecipient(indexed address)
           handler: handleSetFeeRecipient
-        - event: SetGuardian(indexed address)
+        - event: SetGuardian(indexed address,indexed address)
           handler: handleSetGuardian
         - event: SetIsAllocator(indexed address,bool)
           handler: handleSetIsAllocator
-        - event: SetRewardsRecipient(indexed address)
-          handler: handleSetRewardsRecipient
+        - event: SetSkimRecipient(indexed address)
+          handler: handleSetSkimRecipient
         - event: SetSupplyQueue(indexed address,bytes32[])
           handler: handleSetSupplyQueue
-        - event: SetTimelock(uint256)
+        - event: SetTimelock(indexed address,uint256)
           handler: handleSetTimelock
         - event: SetWithdrawQueue(indexed address,bytes32[])
           handler: handleSetWithdrawQueue
-        - event: SubmitCap(indexed bytes32,uint256)
+        - event: Skim(indexed address,indexed address,uint256)
+          handler: handleSkim
+        - event: SubmitCap(indexed address,indexed bytes32,uint256)
           handler: handleSubmitCap
-        - event: SubmitFee(uint256)
-          handler: handleSubmitFee
         - event: SubmitGuardian(indexed address)
           handler: handleSubmitGuardian
+        - event: SubmitMarketRemoval(indexed address,indexed bytes32)
+          handler: handleSubmitMarketRemoval
         - event: SubmitTimelock(uint256)
           handler: handleSubmitTimelock
         - event: Transfer(indexed address,indexed address,uint256)
           handler: handleTransfer
-        - event: TransferRewards(indexed address,indexed address,indexed address,uint256)
-          handler: handleTransferRewards
         - event: UpdateLastTotalAssets(uint256)
           handler: handleUpdateLastTotalAssets
         - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
