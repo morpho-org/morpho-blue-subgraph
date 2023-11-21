@@ -368,7 +368,6 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
       event.params.allocator
     ).getAccount().id;
     allocator.metaMorpho = mm.id;
-    allocator.save();
   }
   allocator.isCurrentAllocator = event.params.isAllocator;
   allocator.save();
