@@ -2036,7 +2036,7 @@ type MetaMorpho @entity {
   supplyQueue: [MetaMorphoMarket!]!
   withdrawQueue: [MetaMorphoMarket!]!
 
-  pendingTimelock: PendingTimelock @derivedFrom(field: "metaMorpho")
+  pendingTimelock: [PendingTimelock!]! @derivedFrom(field: "metaMorpho")
   currentPendingTimelock: PendingTimelock
   pendingGuardian: PendingGuardian @derivedFrom(field: "metaMorpho")
   currentPendingGuardian: PendingGuardian

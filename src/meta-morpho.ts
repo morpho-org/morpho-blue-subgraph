@@ -383,10 +383,7 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
   allocatorSet.gasLimit = event.transaction.gasLimit;
   allocatorSet.blockNumber = event.block.number;
   allocatorSet.timestamp = event.block.timestamp;
-  allocatorSet.accountActor = new AccountManager(
-    // TODO: use sender once redeployed
-    Address.zero()
-  ).getAccount().id;
+  allocatorSet.accountActor = new AccountManager(mm.owner).getAccount().id;
   allocatorSet.metaMorpho = mm.id;
   allocatorSet.isAllocator = event.params.isAllocator;
   allocatorSet.allocator = allocator.id;
@@ -581,11 +578,18 @@ export function handleSubmitGuardian(event: SubmitGuardianEvent): void {
 
 export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
   const mm = loadMetaMorpho(event.address);
-  if (mm.pendingTimelock) {
-    log.critical("MetaMorpho {} already has a pending timelock", [
-      event.address.toHexString(),
-    ]);
-    return;
+  if (mm.currentPendingTimelock) {
+    const prevPendingTimelock = PendingTimelock.load(
+      mm.currentPendingTimelock!
+    )!;
+    if (!prevPendingTimelock) {
+      log.critical("PendingTimelock {} not found", [
+        mm.pendingTimelock!.toHexString()!,
+      ]);
+      return;
+    }
+    prevPendingTimelock.status = PendingValueStatus.REJECTED;
+    prevPendingTimelock.save();
   }
   const pendingTimelock = new PendingTimelock(
     event.address
