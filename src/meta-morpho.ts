@@ -114,6 +114,21 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
   );
   feeRecipient.feeAccruedAssets = feeRecipient.feeAccruedAssets.plus(feeAssets);
   feeRecipient.save();
+  const positionId = event.address.concat(feeRecipient.account);
+  let position = MetaMorphoPosition.load(positionId);
+  if (!position) {
+    position = new MetaMorphoPosition(positionId);
+    position.metaMorpho = mm.id;
+    position.account = feeRecipient.account;
+    position.shares = BigInt.zero();
+  }
+  position.lastAssetsBalance = position.lastAssetsBalance.plus(feeAssets);
+  position.lastAssetsBalanceUSD = new TokenManager(
+    mm.asset,
+    event
+  ).getAmountUSD(position.lastAssetsBalance);
+  position.shares = position.shares.plus(event.params.feeShares);
+  position.save();
 }
 
 export function handleApproval(event: ApprovalEvent): void {}
@@ -584,7 +599,7 @@ export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
     )!;
     if (!prevPendingTimelock) {
       log.critical("PendingTimelock {} not found", [
-        mm.pendingTimelock!.toHexString()!,
+        mm.pendingTimelock!.toHexString(),
       ]);
       return;
     }
