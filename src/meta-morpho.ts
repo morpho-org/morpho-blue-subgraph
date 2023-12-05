@@ -121,6 +121,7 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
     position.metaMorpho = mm.id;
     position.account = feeRecipient.account;
     position.shares = BigInt.zero();
+    position.lastAssetsBalance = BigInt.zero();
   }
   position.lastAssetsBalance = position.lastAssetsBalance.plus(feeAssets);
   position.lastAssetsBalanceUSD = new TokenManager(
