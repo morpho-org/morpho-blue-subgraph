@@ -5,6 +5,7 @@ import { WstEth } from "../generated/MorphoBlue/WstEth";
 
 import { BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
 
+// I'm wrapping addresses and formatting them back to string to ensure resilience with capitalization.
 const wbib01 = Address.fromString(
   "0xca2a7068e551d5c4482eb34880b194e4b945712f"
 ).toHexString();
