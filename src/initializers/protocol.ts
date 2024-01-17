@@ -10,11 +10,10 @@ import {
   INT_ZERO,
 } from "../sdk/constants";
 
-// TODO: add Morpho blue address here
 const MORPHO_BLUE_ADDRESS = new Map<string, Address>();
 MORPHO_BLUE_ADDRESS.set(
-  "goerli",
-  Address.fromString("0xC850a9C14454131aE82C28DC7ff51c2dc6ace06e")
+  "mainnet",
+  Address.fromString("0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb")
 );
 
 let protocol: LendingProtocol | null = null;
@@ -38,7 +37,7 @@ function initBlue(): LendingProtocol {
   protocol.schemaVersion = "3.0.0";
   protocol.subgraphVersion = "0.0.7";
   protocol.methodologyVersion = "1.0.0";
-  protocol.network = dataSource.network();
+  protocol.network = dataSource.network().toUpperCase();
   protocol.type = ProtocolType.LENDING;
   protocol.lendingType = LendingType.POOLED;
   protocol.poolCreatorPermissionType = PermissionType.PERMISSIONLESS;

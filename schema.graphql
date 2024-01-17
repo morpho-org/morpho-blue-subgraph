@@ -24,7 +24,7 @@ enum Network {
   OSMOSIS
   MATIC # aka Polygon
   GNOSIS
-  goerli
+  GOERLI
 }
 
 enum ProtocolType {
@@ -1853,6 +1853,13 @@ type Liquidate implements Event @entity(immutable: true) @transaction {
   " Amount of collateral liquidated in native units "
   amount: BigInt!
 
+  # Added compared to the initial schema
+  collateralAsset: Token!
+  # Added compared to the initial schema
+  repaid: BigInt!
+  # Added compared to the initial schema
+  repaidUSD: BigDecimal!
+
   " Amount of collateral liquidated in USD "
   amountUSD: BigDecimal!
 
@@ -2002,6 +2009,14 @@ type _ChainlinkAggregator @entity {
   id: Bytes!
   proxy: _ChainlinkProxy!
   isDeprecated: Boolean!
+}
+
+type BadDebtRealization @entity {
+  id: Bytes!
+  market: Market!
+  liquidation: Liquidate!
+  badDebt: BigInt!
+  badDebtUSD: BigDecimal
 }
 
 ########### METAMORPHO ENTITIES ############

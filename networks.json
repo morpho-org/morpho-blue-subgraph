@@ -3,6 +3,9 @@
     "MorphoBlue": {
       "address": "0x0000000000000000000000000000000000000000",
       "startBlock": 0
+    },
+    "Contract": {
+      "address": "0x38989BBA00BDF8181F4082995b3DEAe96163aC5D"
     }
   },
   "goerli": {

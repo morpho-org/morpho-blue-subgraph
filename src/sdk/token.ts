@@ -10,6 +10,7 @@ import { ERC20 } from "../../generated/MorphoBlue/ERC20";
 import { ERC20NameBytes } from "../../generated/MorphoBlue/ERC20NameBytes";
 import { ERC20SymbolBytes } from "../../generated/MorphoBlue/ERC20SymbolBytes";
 import { Token } from "../../generated/schema";
+import { fetchUsdTokenPrice } from "../fetchUsdTokenPrice";
 
 import { exponentToBigDecimal } from "./constants";
 
@@ -64,9 +65,11 @@ export class TokenManager {
   }
 
   updatePrice(): BigDecimal {
-    // TODO: add Chainlink logic of collateral / borrowed conversion logic
-
-    return BigDecimal.fromString("0");
+    this._token.lastPriceUSD = fetchUsdTokenPrice(
+      Address.fromBytes(this._token.id)
+    );
+    this._token.save();
+    return this._token.lastPriceUSD!;
   }
 
   getPriceUSD(): BigDecimal {

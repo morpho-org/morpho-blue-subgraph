@@ -18,7 +18,7 @@ services:
       postgres_pass: let-me-in
       postgres_db: subgraph
       ipfs: ipfs:5001
-      ethereum: "goerli:${GOERLI_RPC_URL}"
+      ethereum: "mainnet:${MAINNET_RPC_URL}"
       GRAPH_LOG: info
       ETHEREUM_BLOCK_BATCH_SIZE: 40
 

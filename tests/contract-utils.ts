@@ -1,7 +1,7 @@
 import { newMockEvent } from "matchstick-as"
 import { ethereum, BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
 import {
-  AccrueFee,
+  AccrueInterest,
   Approval,
   Deposit,
   EIP712DomainChanged,
@@ -33,19 +33,28 @@ import {
   Withdraw
 } from "../generated/Contract/Contract"
 
-export function createAccrueFeeEvent(feeShares: BigInt): AccrueFee {
-  let accrueFeeEvent = changetype<AccrueFee>(newMockEvent())
+export function createAccrueInterestEvent(
+  newTotalAssets: BigInt,
+  feeShares: BigInt
+): AccrueInterest {
+  let accrueInterestEvent = changetype<AccrueInterest>(newMockEvent())
 
-  accrueFeeEvent.parameters = new Array()
+  accrueInterestEvent.parameters = new Array()
 
-  accrueFeeEvent.parameters.push(
+  accrueInterestEvent.parameters.push(
+    new ethereum.EventParam(
+      "newTotalAssets",
+      ethereum.Value.fromUnsignedBigInt(newTotalAssets)
+    )
+  )
+  accrueInterestEvent.parameters.push(
     new ethereum.EventParam(
       "feeShares",
       ethereum.Value.fromUnsignedBigInt(feeShares)
     )
   )
 
-  return accrueFeeEvent
+  return accrueInterestEvent
 }
 
 export function createApprovalEvent(
@@ -589,7 +598,7 @@ export function createTransferEvent(
 }
 
 export function createUpdateLastTotalAssetsEvent(
-  newTotalAssets: BigInt
+  updatedTotalAssets: BigInt
 ): UpdateLastTotalAssets {
   let updateLastTotalAssetsEvent = changetype<UpdateLastTotalAssets>(
     newMockEvent()
@@ -599,8 +608,8 @@ export function createUpdateLastTotalAssetsEvent(
 
   updateLastTotalAssetsEvent.parameters.push(
     new ethereum.EventParam(
-      "newTotalAssets",
-      ethereum.Value.fromUnsignedBigInt(newTotalAssets)
+      "updatedTotalAssets",
+      ethereum.Value.fromUnsignedBigInt(updatedTotalAssets)
     )
   )
 

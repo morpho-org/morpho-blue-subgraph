@@ -14,12 +14,14 @@ import {
 } from "../../generated/MorphoBlue/IRM";
 import {
   _MarketList,
+  Account,
   Borrow,
   Deposit,
   Fee,
   Flashloan,
   InterestRate,
   LendingProtocol,
+  Liquidate,
   Market,
   Oracle,
   Position,
@@ -152,6 +154,57 @@ export class DataManager {
   //////////////////
   //// Creators ////
   //////////////////
+
+  createLiquidate(
+    liquidator: Account,
+    borrowPosition: Position,
+    collateralPosition: Position,
+    repaid: BigInt,
+    seized: BigInt
+  ): Liquidate {
+    const id = this._event.transaction.hash
+      .concatI32(this._event.logIndex.toI32())
+      .concatI32(Transaction.DEPOSIT);
+
+    const token = new TokenManager(this._market.borrowedToken, this._event);
+    const collateralToken = new TokenManager(
+      this._market.inputToken,
+      this._event
+    );
+
+    const liquidate = new Liquidate(id);
+    liquidate.hash = this._event.transaction.hash;
+    liquidate.nonce = this._event.transaction.nonce;
+    liquidate.logIndex = this._event.logIndex.toI32();
+    liquidate.gasPrice = this._event.transaction.gasPrice;
+    liquidate.gasUsed = this._event.receipt
+      ? this._event.receipt!.gasUsed
+      : null;
+    liquidate.gasLimit = this._event.transaction.gasLimit;
+    liquidate.blockNumber = this._event.block.number;
+    liquidate.timestamp = this._event.block.timestamp;
+    liquidate.liquidator = liquidator.id;
+    liquidate.liquidatee = borrowPosition.account;
+    liquidate.market = this._market.id;
+    liquidate.positions = [borrowPosition.id, collateralPosition.id];
+    liquidate.asset = token.getToken().id;
+    liquidate.amount = seized;
+
+    const seizedUSD = token.getAmountUSD(repaid);
+    liquidate.amountUSD = seizedUSD;
+    liquidate.repaid = repaid;
+    liquidate.repaidUSD = collateralToken.getAmountUSD(repaid);
+
+    liquidate.collateralAsset = collateralToken.getToken().id;
+    liquidate.profitUSD = liquidate.amountUSD.minus(liquidate.repaidUSD);
+
+    liquidate.save();
+
+    this._updateTransactionData(TransactionType.LIQUIDATE, seized, seizedUSD);
+    this._updateUsageData(TransactionType.LIQUIDATE, borrowPosition.account);
+
+    return liquidate;
+  }
 
   createDepositCollateral(position: Position, amount: BigInt): Deposit {
     const token = new TokenManager(this._market.inputToken, this._event);
@@ -419,12 +472,6 @@ export class DataManager {
     const inputTokenPriceUSD = this._inputToken.updatePrice();
     const borrowableTokenPriceUSD = this._borrowedToken.updatePrice();
     this._market.inputTokenPriceUSD = inputTokenPriceUSD;
-
-    const vBorrowAmount = this._market.variableBorrowedTokenBalance
-      ? this._market
-          .variableBorrowedTokenBalance!.toBigDecimal()
-          .div(exponentToBigDecimal(this._borrowedToken.getDecimals()))
-      : BigDecimal.zero();
 
     const totalCollateralUSD = this._market.totalCollateral
       .toBigDecimal()

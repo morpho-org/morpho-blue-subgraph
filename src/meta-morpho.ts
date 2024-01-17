@@ -15,7 +15,7 @@ import {
   PendingTimelock,
 } from "../generated/schema";
 import {
-  AccrueFee as AccrueFeeEvent,
+  AccrueInterest as AccrueInterestEvent,
   Approval as ApprovalEvent,
   Deposit as DepositEvent,
   EIP712DomainChanged as EIP712DomainChangedEvent,
@@ -85,8 +85,14 @@ export function handleReallocateSupply(event: ReallocateSupplyEvent): void {}
 
 export function handleSkim(event: SkimEvent): void {}
 
-export function handleAccrueFee(event: AccrueFeeEvent): void {
+export function handleAccrueInterest(event: AccrueInterestEvent): void {
   const mm = loadMetaMorpho(event.address);
+
+  mm.lastTotalAssets = event.params.newTotalAssets;
+  mm.save();
+
+  if (event.params.feeShares.isZero()) return;
+
   mm.feeAccrued = mm.feeAccrued.plus(event.params.feeShares);
   // Convert to assets
   const feeAssets = toAssetsDown(
@@ -191,7 +197,9 @@ export function handleEIP712DomainChanged(
 
 export function handleOwnershipTransferStarted(
   event: OwnershipTransferStartedEvent
-): void {}
+): void {
+  // TODO: use pending owner entity
+}
 
 export function handleOwnershipTransferred(
   event: OwnershipTransferredEvent
@@ -600,7 +608,7 @@ export function handleSubmitTimelock(event: SubmitTimelockEvent): void {
     )!;
     if (!prevPendingTimelock) {
       log.critical("PendingTimelock {} not found", [
-        mm.pendingTimelock!.toHexString(),
+        mm.currentPendingTimelock!.toHexString(),
       ]);
       return;
     }
@@ -706,7 +714,7 @@ export function handleUpdateLastTotalAssets(
   event: UpdateLastTotalAssetsEvent
 ): void {
   const mm = loadMetaMorpho(event.address);
-  mm.lastTotalAssets = event.params.newTotalAssets;
+  mm.lastTotalAssets = event.params.updatedTotalAssets;
   mm.save();
 }
 
