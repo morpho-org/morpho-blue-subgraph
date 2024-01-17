@@ -68,6 +68,8 @@ export class TokenManager {
     this._token.lastPriceUSD = fetchUsdTokenPrice(
       Address.fromBytes(this._token.id)
     );
+
+    this._token.lastPriceBlockNumber = this.event.block.number;
     this._token.save();
     return this._token.lastPriceUSD!;
   }

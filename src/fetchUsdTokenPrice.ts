@@ -5,31 +5,57 @@ import { WstEth } from "../generated/MorphoBlue/WstEth";
 
 import { BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
 
-const wbib01 = Address.fromString("0xca2a7068e551d5c4482eb34880b194e4b945712f");
-const wstEth = Address.fromString("0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0");
-const weth = Address.fromString("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-const usdc = Address.fromString("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
+const wbib01 = Address.fromString(
+  "0xca2a7068e551d5c4482eb34880b194e4b945712f"
+).toHexString();
+const wstEth = Address.fromString(
+  "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+).toHexString();
+const weth = Address.fromString(
+  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+).toHexString();
+const wbtc = Address.fromString(
+  "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+).toHexString();
+const usdc = Address.fromString(
+  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+).toHexString();
 
-const usdPriceFeeds = new Map<Address, Address>();
-usdPriceFeeds.set(
-  wbib01,
-  Address.fromString("0x32d1463EB53b73C095625719Afa544D5426354cB")
-);
-usdPriceFeeds.set(
-  weth,
-  Address.fromString("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419")
-);
-usdPriceFeeds.set(
-  usdc,
-  Address.fromString("0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6")
-);
+const usdPriceFeeds = new Map<string, string>()
+  .set(
+    wbib01,
+    Address.fromString(
+      "0x32d1463EB53b73C095625719Afa544D5426354cB"
+    ).toHexString()
+  )
+  .set(
+    wbtc,
+    Address.fromString(
+      "0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23"
+    ).toHexString()
+  )
+  .set(
+    weth,
+    Address.fromString(
+      "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    ).toHexString()
+  )
+  .set(
+    usdc,
+    Address.fromString(
+      "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    ).toHexString()
+  );
 
 export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
   log.warning("fetchUsdTokenPrice({})", [tokenAddress.toHexString()]);
-  if (usdPriceFeeds.has(tokenAddress)) {
+  log.info("fetchUsdTokenPrice({})", [tokenAddress.toHexString()]);
+  log.error("fetchUsdTokenPrice({})", [tokenAddress.toHexString()]);
+  if (usdPriceFeeds.has(tokenAddress.toHexString())) {
     const chainlinkPriceFeed = ChainlinkPriceFeed.bind(
-      usdPriceFeeds.get(tokenAddress)
+      Address.fromString(usdPriceFeeds.get(tokenAddress.toHexString()))
     );
+
     return chainlinkPriceFeed
       .latestRoundData()
       .getAnswer()
@@ -41,13 +67,13 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       );
   }
 
-  if (tokenAddress.equals(wstEth)) {
-    const wstEthContract = WstEth.bind(wstEth);
+  if (tokenAddress.equals(Address.fromString(wstEth))) {
+    const wstEthContract = WstEth.bind(Address.fromString(wstEth));
     return wstEthContract
       .getStETHByWstETH(BIGINT_WAD)
       .toBigDecimal()
       .div(BIGDECIMAL_WAD)
-      .times(fetchUsdTokenPrice(weth));
+      .times(fetchUsdTokenPrice(Address.fromString(weth)));
   }
 
   return BigDecimal.zero();
