@@ -483,6 +483,12 @@ export class DataManager {
       .div(exponentToBigDecimal(this._borrowedToken.getDecimals()))
       .times(borrowableTokenPriceUSD);
 
+    const totalBorrowUSD = this._market.totalBorrow
+      .toBigDecimal()
+      .div(exponentToBigDecimal(this._borrowedToken.getDecimals()))
+      .times(borrowableTokenPriceUSD);
+
+    this._market.totalBorrowBalanceUSD = totalBorrowUSD;
     this._market.totalValueLockedUSD = totalCollateralUSD.plus(totalSupplyUSD);
     this._market.totalDepositBalanceUSD = this._market.totalValueLockedUSD;
 
