@@ -1,0 +1,80 @@
+name: morpho-blue-subgraph
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  builds:
+    name: Build of Morpho Blue Subgraph
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Generate types
+        run: yarn codegen
+
+      - name: Build subgraph
+        run: yarn build
+
+  deployment:
+    name: Deploy to TheGraph hosted service
+    environment:
+      name: Hosted Service
+      url: https://thegraph.com/hosted-service/subgraph/morpho-association/morpho-blue
+    needs: builds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Generate types
+        run: yarn codegen
+
+      - name: Deploy to the hosted service
+        run: yarn graph auth --product hosted-service ${{ secrets.HOSTED_SERVICE_KEY }} && yarn deploy:hs
+
+  release:
+    name: Create new release
+    runs-on: ubuntu-latest
+    needs: deployment
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Publish release
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

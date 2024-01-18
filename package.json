@@ -19,6 +19,7 @@
     "@graphprotocol/graph-ts": "0.30.0"
   },
   "devDependencies": {
+    "@types/node": "^20.11.5",
     "@trivago/prettier-plugin-sort-imports": "^4.2.0",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
