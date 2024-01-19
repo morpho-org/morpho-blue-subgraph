@@ -64,11 +64,6 @@ export function handleAccrueInterest(event: AccrueInterest): void {
   }
 
   market.save();
-
-  // update prices, tvl etc.
-  const dataManager = new DataManager(market.id, event);
-
-  dataManager.updateMarketAndProtocolData();
 }
 
 export function handleBorrow(event: Borrow): void {
@@ -94,6 +89,8 @@ export function handleBorrow(event: Borrow): void {
 
   const manager = new DataManager(market.id, event);
   manager.createBorrow(position, event.params.shares, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleCreateMarket(event: CreateMarket): void {
@@ -208,6 +205,8 @@ export function handleLiquidate(event: Liquidate): void {
     badDebtRealization.save();
   }
   market.save();
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleRepay(event: Repay): void {
@@ -233,6 +232,8 @@ export function handleRepay(event: Repay): void {
 
   const manager = new DataManager(market.id, event);
   manager.createRepay(position, event.params.shares, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleSetAuthorization(event: SetAuthorization): void {}
@@ -276,6 +277,8 @@ export function handleSupply(event: Supply): void {
 
   const manager = new DataManager(market.id, event);
   manager.createDeposit(position, event.params.shares, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleSupplyCollateral(event: SupplyCollateral): void {
@@ -297,6 +300,8 @@ export function handleSupplyCollateral(event: SupplyCollateral): void {
 
   const manager = new DataManager(market.id, event);
   manager.createDepositCollateral(position, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleWithdraw(event: Withdraw): void {
@@ -321,6 +326,8 @@ export function handleWithdraw(event: Withdraw): void {
 
   const manager = new DataManager(market.id, event);
   manager.createWithdraw(position, event.params.shares, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
 
 export function handleWithdrawCollateral(event: WithdrawCollateral): void {
@@ -342,4 +349,6 @@ export function handleWithdrawCollateral(event: WithdrawCollateral): void {
 
   const manager = new DataManager(market.id, event);
   manager.createWithdrawCollateral(position, event.params.assets);
+
+  manager.updateMarketAndProtocolData();
 }
