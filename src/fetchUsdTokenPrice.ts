@@ -1,6 +1,7 @@
 import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 
 import { ChainlinkPriceFeed } from "../generated/MorphoBlue/ChainlinkPriceFeed";
+import { ERC4626 } from "../generated/MorphoBlue/ERC4626";
 import { WstEth } from "../generated/MorphoBlue/WstEth";
 
 import { BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
@@ -20,6 +21,13 @@ const wbtc = Address.fromString(
 ).toHexString();
 const usdc = Address.fromString(
   "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+).toHexString();
+
+const sdai = Address.fromString(
+  "0x83F20F44975D03b1b09e64809B757c47f942BEeA"
+).toHexString();
+const dai = Address.fromString(
+  "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 ).toHexString();
 
 const usdPriceFeeds = new Map<string, string>()
@@ -45,6 +53,12 @@ const usdPriceFeeds = new Map<string, string>()
     usdc,
     Address.fromString(
       "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    ).toHexString()
+  )
+  .set(
+    dai,
+    Address.fromString(
+      "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9"
     ).toHexString()
   );
 
@@ -75,6 +89,14 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .toBigDecimal()
       .div(BIGDECIMAL_WAD)
       .times(fetchUsdTokenPrice(Address.fromString(weth)));
+  }
+  if (tokenAddress.equals(Address.fromString(sdai))) {
+    const sDaiContract = ERC4626.bind(Address.fromString(sdai));
+    return sDaiContract
+      .convertToAssets(BIGINT_WAD)
+      .toBigDecimal()
+      .div(BIGDECIMAL_WAD)
+      .times(fetchUsdTokenPrice(Address.fromString(dai)));
   }
 
   return BigDecimal.zero();

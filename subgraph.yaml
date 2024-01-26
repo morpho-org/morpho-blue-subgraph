@@ -36,6 +36,8 @@ dataSources:
           file: ./abis/MorphoBlue.json
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
         - name: ERC20SymbolBytes
           file: ./abis/ERC20SymbolBytes.json
         - name: ERC20NameBytes
@@ -106,6 +108,8 @@ dataSources:
           file: ./abis/MorphoBlue.json
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
         - name: ERC20SymbolBytes
           file: ./abis/ERC20SymbolBytes.json
         - name: ERC20NameBytes
@@ -172,6 +176,8 @@ templates:
           file: ./abis/chainlink/ChainlinkPriceFeed.json
         - name: WstEth
           file: ./abis/WstEth.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
 
       eventHandlers:
         - event: AccrueInterest(uint256,uint256)
@@ -251,6 +257,8 @@ templates:
           file: ./abis/chainlink/ChainlinkAggregatorProxy.json
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
         - name: ERC20SymbolBytes
           file: ./abis/ERC20SymbolBytes.json
         - name: ERC20NameBytes
@@ -282,6 +290,8 @@ templates:
           file: ./abis/chainlink/ChainlinkPriceFeed.json
         - name: ERC20
           file: ./abis/ERC20.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
         - name: ERC20SymbolBytes
           file: ./abis/ERC20SymbolBytes.json
         - name: ERC20NameBytes
