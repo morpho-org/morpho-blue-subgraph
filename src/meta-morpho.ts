@@ -47,7 +47,6 @@ import {
   ReallocateWithdraw as ReallocateWithdrawEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
-import { toAssetsDown } from "./maths/shares";
 import { AccountManager } from "./sdk/account";
 import {
   loadMetaMorpho,
@@ -58,6 +57,7 @@ import {
   updateMMRate,
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
+import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
 
 export function handleSubmitMarketRemoval(
   event: SubmitMarketRemovalEvent
@@ -94,12 +94,14 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
 
   mm.feeAccrued = mm.feeAccrued.plus(event.params.feeShares);
+  const token = new TokenManager(mm.asset, event);
   // Convert to assets
-  const feeAssets = toAssetsDown(
+  const feeAssets = toMetaMorphoAssetsUp(
     event.params.feeShares,
     mm.totalShares,
     // This is taking the last total assets, not the current one
-    mm.lastTotalAssets
+    mm.lastTotalAssets,
+    token.getDecimals()
   );
   mm.feeAccruedAssets = mm.feeAccruedAssets.plus(feeAssets);
   mm.save();
@@ -155,15 +157,10 @@ export function handleDeposit(event: DepositEvent): void {
   }
   position.shares = position.shares.plus(event.params.shares);
 
-  const toAssets = toAssetsDown(
-    event.params.shares,
-    mm.totalShares,
-    mm.lastTotalAssets
-  );
-  position.lastAssetsBalance = toAssets;
+  position.lastAssetsBalance = event.params.assets;
 
   const token = new TokenManager(mm.asset, event);
-  position.lastAssetsBalanceUSD = token.getAmountUSD(toAssets);
+  position.lastAssetsBalanceUSD = token.getAmountUSD(event.params.assets);
 
   position.save();
 
@@ -651,14 +648,15 @@ export function handleTransfer(event: TransferEvent): void {
     ]);
     return;
   }
+  const token = new TokenManager(mm.asset, event);
   fromPosition.shares = fromPosition.shares.minus(event.params.value);
-  const fromAssets = toAssetsDown(
+  const fromAssets = toMetaMorphoAssetsUp(
     fromPosition.shares,
     mm.totalShares,
-    mm.lastTotalAssets
+    mm.lastTotalAssets,
+    token.getDecimals()
   );
   fromPosition.lastAssetsBalance = fromAssets;
-  const token = new TokenManager(mm.asset, event);
   fromPosition.lastAssetsBalanceUSD = token.getAmountUSD(fromAssets);
   fromPosition.save();
 
@@ -671,13 +669,8 @@ export function handleTransfer(event: TransferEvent): void {
     toPosition.shares = BigInt.zero();
   }
   toPosition.shares = toPosition.shares.plus(event.params.value);
-  const toAssets = toAssetsDown(
-    toPosition.shares,
-    mm.totalShares,
-    mm.lastTotalAssets
-  );
-  toPosition.lastAssetsBalance = toAssets;
-  toPosition.lastAssetsBalanceUSD = token.getAmountUSD(toAssets);
+  toPosition.lastAssetsBalance = fromAssets;
+  toPosition.lastAssetsBalanceUSD = token.getAmountUSD(fromAssets);
   toPosition.save();
 
   const transfer = new MetaMorphoTransfer(
@@ -693,14 +686,9 @@ export function handleTransfer(event: TransferEvent): void {
   transfer.timestamp = event.block.timestamp;
   transfer.from = fromPosition.account;
   transfer.to = toPosition.account;
-  const underlyingAmount = toAssetsDown(
-    event.params.value,
-    mm.totalShares,
-    mm.lastTotalAssets
-  );
   transfer.shares = event.params.value;
-  transfer.amount = underlyingAmount;
-  transfer.amountUSD = token.getAmountUSD(underlyingAmount);
+  transfer.amount = fromAssets;
+  transfer.amountUSD = token.getAmountUSD(fromAssets);
 
   transfer.metaMorphoPositionFrom = fromPosition.id;
   transfer.metaMorphoPositionTo = toPosition.id;
@@ -730,13 +718,14 @@ export function handleWithdraw(event: WithdrawEvent): void {
     return;
   }
   position.shares = position.shares.minus(event.params.shares);
-  const totalAssets = toAssetsDown(
+  const asset = new TokenManager(mm.asset, event);
+  const totalAssets = toMetaMorphoAssetsUp(
     position.shares,
     mm.totalShares,
-    mm.lastTotalAssets
+    mm.lastTotalAssets,
+    asset.getDecimals()
   );
   position.lastAssetsBalance = totalAssets;
-  const asset = new TokenManager(mm.asset, event);
   position.lastAssetsBalanceUSD = asset.getAmountUSD(totalAssets);
   position.save();
 
