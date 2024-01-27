@@ -101,7 +101,7 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
     mm.totalShares,
     // This is taking the last total assets, not the current one
     mm.lastTotalAssets,
-    token.getDecimals()
+    token.getDecimals() as u8
   );
   mm.feeAccruedAssets = mm.feeAccruedAssets.plus(feeAssets);
   mm.save();
@@ -654,7 +654,7 @@ export function handleTransfer(event: TransferEvent): void {
     fromPosition.shares,
     mm.totalShares,
     mm.lastTotalAssets,
-    token.getDecimals()
+    token.getDecimals() as u8
   );
   fromPosition.lastAssetsBalance = fromAssets;
   fromPosition.lastAssetsBalanceUSD = token.getAmountUSD(fromAssets);
@@ -723,7 +723,7 @@ export function handleWithdraw(event: WithdrawEvent): void {
     position.shares,
     mm.totalShares,
     mm.lastTotalAssets,
-    asset.getDecimals()
+    asset.getDecimals() as u8
   );
   position.lastAssetsBalance = totalAssets;
   position.lastAssetsBalanceUSD = asset.getAmountUSD(totalAssets);
