@@ -213,7 +213,7 @@ export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
   const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
 
   if (!mmMarket.currentPendingCap) {
-    log.critical("MetaMorphoMarket {} has no pending cap", [
+    log.warning("MetaMorphoMarket {} has no pending cap", [
       event.address.toHexString(),
     ]);
     return;
@@ -238,7 +238,7 @@ export function handleRevokePendingGuardian(
 ): void {
   const mm = loadMetaMorpho(event.address);
   if (!mm.currentPendingGuardian) {
-    log.critical("MetaMorpho {} has no pending guardian", [
+    log.warning("MetaMorpho {} has no pending guardian", [
       event.address.toHexString(),
     ]);
     return;
@@ -261,14 +261,14 @@ export function handleRevokePendingTimelock(
   event: RevokePendingTimelockEvent
 ): void {
   const mm = loadMetaMorpho(event.address);
-  if (!mm.currentPendingTimelock) {
-    log.critical("MetaMorpho {} has no pending timelock", [
+  if (mm.currentPendingTimelock === null) {
+    log.warning("MetaMorpho {} has no pending timelock", [
       event.address.toHexString(),
     ]);
     return;
   }
   const pendingTimelock = PendingTimelock.load(mm.currentPendingTimelock!);
-  if (!pendingTimelock) {
+  if (pendingTimelock === null) {
     log.critical("PendingTimelock {} not found", [
       mm.currentPendingTimelock!.toHexString(),
     ]);
