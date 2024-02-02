@@ -99,7 +99,6 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
   const feeAssets = toMetaMorphoAssetsUp(
     event.params.feeShares,
     mm.totalShares,
-    // This is taking the last total assets, not the current one
     mm.lastTotalAssets,
     token.getDecimals() as u8
   );
