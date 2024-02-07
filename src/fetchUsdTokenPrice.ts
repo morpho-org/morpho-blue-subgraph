@@ -4,7 +4,7 @@ import { ChainlinkPriceFeed } from "../generated/MorphoBlue/ChainlinkPriceFeed";
 import { ERC4626 } from "../generated/MorphoBlue/ERC4626";
 import { WstEth } from "../generated/MorphoBlue/WstEth";
 
-import { BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
+import { BIGDECIMAL_ONE, BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
 
 // I'm wrapping addresses and formatting them back to string to ensure resilience with capitalization.
 const wbib01 = Address.fromString(
@@ -36,6 +36,10 @@ const weETH = Address.fromString(
 const osETH = Address.fromString(
   "0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38"
 ).toHexString();
+
+const pyUsd = Address.fromString(
+  "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
+).toHexString()
 
 const usdPriceFeeds = new Map<string, string>()
   .set(
@@ -95,7 +99,7 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .toBigDecimal()
       .div(
         BigInt.fromString("10")
-          .pow(chainlinkPriceFeed.decimals())
+          .pow(chainlinkPriceFeed.decimals() as u8)
           .toBigDecimal()
       );
   }
@@ -109,7 +113,7 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .toBigDecimal()
       .div(
         BigInt.fromString("10")
-          .pow(chainlinkPriceFeed.decimals())
+          .pow(chainlinkPriceFeed.decimals() as u8)
           .toBigDecimal()
       )
       .times(fetchUsdTokenPrice(Address.fromString(weth)));
@@ -130,6 +134,10 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .toBigDecimal()
       .div(BIGDECIMAL_WAD)
       .times(fetchUsdTokenPrice(Address.fromString(dai)));
+  }
+  if(tokenAddress.equals(Address.fromString(pyUsd))){
+    // price is hardcoded at 1 since the token is regulated. This is also the case in the trusted oracles.
+    return BIGDECIMAL_ONE;
   }
 
   return BigDecimal.zero();
