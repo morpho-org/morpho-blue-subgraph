@@ -157,7 +157,7 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .div(BIGDECIMAL_WAD)
       .times(fetchUsdTokenPrice(Address.fromString(dai)));
   }
-  if(tokenAddress.equals(Address.fromString(pyUsd))){
+  if (tokenAddress.equals(Address.fromString(pyUsd))) {
     // price is hardcoded at 1 since the token is regulated. This is also the case in the trusted oracles.
     return BIGDECIMAL_ONE;
   }
