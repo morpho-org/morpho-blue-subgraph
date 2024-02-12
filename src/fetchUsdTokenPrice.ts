@@ -2,6 +2,7 @@ import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 
 import { ChainlinkPriceFeed } from "../generated/MorphoBlue/ChainlinkPriceFeed";
 import { ERC4626 } from "../generated/MorphoBlue/ERC4626";
+import { REth } from "../generated/MorphoBlue/REth";
 import { WstEth } from "../generated/MorphoBlue/WstEth";
 
 import { BIGDECIMAL_ONE, BIGDECIMAL_WAD, BIGINT_WAD } from "./sdk/constants";
@@ -37,9 +38,16 @@ const osETH = Address.fromString(
   "0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38"
 ).toHexString();
 
+const usdt = Address.fromString(
+  "0xdac17f958d2ee523a2206206994597c13d831ec7"
+).toHexString();
+const rEth = Address.fromString(
+  "0xae78736cd615f374d3085123a210448e74fc6393"
+).toHexString();
+
 const pyUsd = Address.fromString(
   "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8"
-).toHexString()
+).toHexString();
 
 const usdPriceFeeds = new Map<string, string>()
   .set(
@@ -76,6 +84,12 @@ const usdPriceFeeds = new Map<string, string>()
     weETH,
     Address.fromString(
       "0xdDb6F90fFb4d3257dd666b69178e5B3c5Bf41136"
+    ).toHexString()
+  )
+  .set(
+    usdt,
+    Address.fromString(
+      "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D"
     ).toHexString()
   );
 
@@ -123,6 +137,14 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
     const wstEthContract = WstEth.bind(Address.fromString(wstEth));
     return wstEthContract
       .getStETHByWstETH(BIGINT_WAD)
+      .toBigDecimal()
+      .div(BIGDECIMAL_WAD)
+      .times(fetchUsdTokenPrice(Address.fromString(weth)));
+  }
+  if (tokenAddress.equals(Address.fromString(rEth))) {
+    const rEthContract = REth.bind(Address.fromString(rEth));
+    return rEthContract
+      .getExchangeRate()
       .toBigDecimal()
       .div(BIGDECIMAL_WAD)
       .times(fetchUsdTokenPrice(Address.fromString(weth)));
