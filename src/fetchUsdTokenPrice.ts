@@ -82,12 +82,6 @@ const usdPriceFeeds = new Map<string, string>()
     ).toHexString()
   )
   .set(
-    weth,
-    Address.fromString(
-      "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
-    ).toHexString()
-  )
-  .set(
     usdc,
     Address.fromString(
       "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
@@ -128,53 +122,45 @@ const eurPriceFeeds = new Map<string, string>().set(
   Address.fromString("0x83ec02059f686e747392a22ddfed7833ba0d7ce3").toHexString()
 );
 
+function fetchPriceFromFeed(feedAddress: Address): BigDecimal {
+  const chainlinkPriceFeed = ChainlinkPriceFeed.bind(feedAddress);
+  return chainlinkPriceFeed
+    .latestRoundData()
+    .getAnswer()
+    .toBigDecimal()
+    .div(
+      BigInt.fromString("10")
+        .pow(chainlinkPriceFeed.decimals() as u8)
+        .toBigDecimal()
+    );
+}
+
 export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
   if (usdPriceFeeds.has(tokenAddress.toHexString())) {
-    const chainlinkPriceFeed = ChainlinkPriceFeed.bind(
-      Address.fromString(usdPriceFeeds.get(tokenAddress.toHexString()))
+    const chainlinkPriceFeed = Address.fromString(
+      usdPriceFeeds.get(tokenAddress.toHexString())
     );
 
-    return chainlinkPriceFeed
-      .latestRoundData()
-      .getAnswer()
-      .toBigDecimal()
-      .div(
-        BigInt.fromString("10")
-          .pow(chainlinkPriceFeed.decimals() as u8)
-          .toBigDecimal()
-      );
+    return fetchPriceFromFeed(chainlinkPriceFeed);
   }
 
   if (ethPriceFeeds.has(tokenAddress.toHexString())) {
-    const chainlinkPriceFeed = ChainlinkPriceFeed.bind(
-      Address.fromString(ethPriceFeeds.get(tokenAddress.toHexString()))
+    const chainlinkPriceFeed = Address.fromString(
+      ethPriceFeeds.get(tokenAddress.toHexString())
     );
-    return chainlinkPriceFeed
-      .latestRoundData()
-      .getAnswer()
-      .toBigDecimal()
-      .div(
-        BigInt.fromString("10")
-          .pow(chainlinkPriceFeed.decimals() as u8)
-          .toBigDecimal()
-      )
-      .times(fetchUsdTokenPrice(Address.fromString(weth)));
+    return fetchPriceFromFeed(chainlinkPriceFeed).times(
+      fetchUsdTokenPrice(Address.fromString(weth))
+    );
   }
 
   if (eurPriceFeeds.has(tokenAddress.toHexString())) {
-    const chainlinkPriceFeed = ChainlinkPriceFeed.bind(
-      Address.fromString(eurPriceFeeds.get(tokenAddress.toHexString()))
+    const chainlinkPriceFeed = Address.fromString(
+      eurPriceFeeds.get(tokenAddress.toHexString())
     );
-    return chainlinkPriceFeed
-      .latestRoundData()
-      .getAnswer()
-      .toBigDecimal()
-      .div(
-        BigInt.fromString("10")
-          .pow(chainlinkPriceFeed.decimals() as u8)
-          .toBigDecimal()
-      )
-      .times(fetchUsdTokenPrice(Address.fromString(EURe)));
+
+    return fetchPriceFromFeed(chainlinkPriceFeed).times(
+      fetchUsdTokenPrice(Address.fromString(EURe))
+    );
   }
 
   if (tokenAddress.equals(Address.fromString(wstEth))) {
@@ -193,6 +179,20 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .toBigDecimal()
       .div(BIGDECIMAL_WAD)
       .times(fetchUsdTokenPrice(Address.fromString(weth)));
+  }
+
+  if (tokenAddress.equals(Address.fromString(wbtc))) {
+    const wbtcBtcPriceFeed = Address.fromString(
+      "0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23"
+    );
+
+    const btcUsdPriceFeed = Address.fromString(
+      "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    );
+
+    return fetchPriceFromFeed(btcUsdPriceFeed).times(
+      fetchPriceFromFeed(wbtcBtcPriceFeed)
+    );
   }
 
   if (tokenAddress.equals(Address.fromString(sdai))) {
