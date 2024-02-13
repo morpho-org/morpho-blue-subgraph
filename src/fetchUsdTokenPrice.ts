@@ -78,7 +78,7 @@ const usdPriceFeeds = new Map<string, string>()
   .set(
     wbtc,
     Address.fromString(
-      "0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23"
+      "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43"
     ).toHexString()
   )
   .set(
