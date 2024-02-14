@@ -407,9 +407,10 @@ export class PositionManager {
     position.market = this._market.id;
 
     position.asset =
-      transactionType === TransactionType.BORROW
-        ? this._market.borrowedToken
-        : this._market.inputToken;
+      transactionType === TransactionType.DEPOSIT_COLLATERAL ||
+      transactionType === TransactionType.WITHDRAW_COLLATERAL
+        ? this._market.inputToken
+        : this._market.borrowedToken;
     position.hashOpened = event.transaction.hash;
     position.blockNumberOpened = event.block.number;
     position.timestampOpened = event.block.timestamp;
