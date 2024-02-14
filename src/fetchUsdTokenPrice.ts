@@ -76,9 +76,9 @@ const usdPriceFeeds = new Map<string, string>()
     ).toHexString()
   )
   .set(
-    wbtc,
+    weth,
     Address.fromString(
-      "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43"
+      "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
     ).toHexString()
   )
   .set(
@@ -187,7 +187,7 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
     );
 
     const btcUsdPriceFeed = Address.fromString(
-      "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+      "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c"
     );
 
     return fetchPriceFromFeed(btcUsdPriceFeed).times(
