@@ -68,8 +68,16 @@ const EURe = Address.fromString(
   "0x3231cb76718cdef2155fc47b5286d82e6eda273f"
 ).toHexString();
 
+const eurc = Address.fromString(
+  "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c"
+).toHexString();
+
 const ezETH = Address.fromString(
   "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110"
+).toHexString();
+
+const mkr = Address.fromString(
+  "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2"
 ).toHexString();
 
 const usdPriceFeeds = new Map<string, string>()
@@ -113,6 +121,18 @@ const usdPriceFeeds = new Map<string, string>()
     EURe,
     Address.fromString(
       "0xb49f677943BC038e9857d61E7d053CaA2C1734C1"
+    ).toHexString()
+  )
+  .set(
+    eurc,
+    Address.fromString(
+      "0xb49f677943BC038e9857d61E7d053CaA2C1734C1"
+    ).toHexString()
+  )
+  .set(
+    mkr,
+    Address.fromString(
+      "0xec1D1B3b0443256cc3860e24a46F108e699484Aa"
     ).toHexString()
   );
 
