@@ -1637,6 +1637,7 @@ type Deposit implements Event @entity(immutable: true) @transaction {
   ##### Add Ons #####
 
   isCollateral: Boolean!
+  shares: BigInt
 }
 
 type Withdraw implements Event @entity(immutable: true) @transaction {

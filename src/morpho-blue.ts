@@ -88,7 +88,7 @@ export function handleBorrow(event: Borrow): void {
   market.save();
 
   const manager = new DataManager(market.id, event);
-  manager.createBorrow(position, event.params.shares, event.params.assets);
+  manager.createBorrow(position, event.params.assets, event.params.shares);
 
   manager.updateMarketAndProtocolData();
 }
@@ -178,8 +178,9 @@ export function handleLiquidate(event: Liquidate): void {
     new AccountManager(event.params.caller).getAccount(),
     borrowPosition.getPosition()!,
     collateralPosition.getPosition()!,
-    event.params.seizedAssets,
-    event.params.repaidAssets
+
+    event.params.repaidAssets,
+    event.params.seizedAssets
   );
 
   collateralPosition.reduceCollateralPosition(event, event.params.seizedAssets);
@@ -231,7 +232,7 @@ export function handleRepay(event: Repay): void {
   market.save();
 
   const manager = new DataManager(market.id, event);
-  manager.createRepay(position, event.params.shares, event.params.assets);
+  manager.createRepay(position, event.params.assets, event.params.shares);
 
   manager.updateMarketAndProtocolData();
 }
@@ -276,7 +277,7 @@ export function handleSupply(event: Supply): void {
   market.save();
 
   const manager = new DataManager(market.id, event);
-  manager.createDeposit(position, event.params.shares, event.params.assets);
+  manager.createDeposit(position, event.params.assets, event.params.shares);
 
   manager.updateMarketAndProtocolData();
 }
@@ -325,7 +326,7 @@ export function handleWithdraw(event: Withdraw): void {
   market.save();
 
   const manager = new DataManager(market.id, event);
-  manager.createWithdraw(position, event.params.shares, event.params.assets);
+  manager.createWithdraw(position, event.params.assets, event.params.shares);
 
   manager.updateMarketAndProtocolData();
 }

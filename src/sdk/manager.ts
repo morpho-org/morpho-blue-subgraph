@@ -268,6 +268,7 @@ export class DataManager {
     deposit.market = this._market.id;
     deposit.position = position.id;
     deposit.asset = position.asset;
+    deposit.shares = shares;
     deposit.amount = amount;
     deposit.amountUSD = amountUSD;
     deposit.save();
