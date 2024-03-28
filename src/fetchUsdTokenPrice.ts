@@ -80,6 +80,13 @@ const mkr = Address.fromString(
   "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2"
 ).toHexString();
 
+const sUSDE = Address.fromString(
+  "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497"
+).toHexString();
+const usde = Address.fromString(
+  "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3"
+).toHexString();
+
 const usdPriceFeeds = new Map<string, string>()
   .set(
     wbib01,
@@ -237,16 +244,22 @@ export function fetchUsdTokenPrice(tokenAddress: Address): BigDecimal {
       .times(fetchUsdTokenPrice(Address.fromString(dai)));
   }
 
-  if (tokenAddress.equals(Address.fromString(wusdm))) {
+  if (
+    tokenAddress.equals(Address.fromString(wusdm)) ||
+    tokenAddress.equals(Address.fromString(sUSDE))
+  ) {
     const erc4626 = ERC4626.bind(Address.fromString(wusdm));
-    // exchange 1 usdm = 1 usd
+    // exchange rate of the underlying is 1 USD
     return erc4626
       .convertToAssets(BIGINT_WAD)
       .toBigDecimal()
       .div(BIGDECIMAL_WAD);
   }
 
-  if (tokenAddress.equals(Address.fromString(pyUsd))) {
+  if (
+    tokenAddress.equals(Address.fromString(pyUsd)) ||
+    tokenAddress.equals(Address.fromString(usde))
+  ) {
     // price is hardcoded at 1 since the token is regulated. This is also the case in the trusted oracles.
     return BIGDECIMAL_ONE;
   }
