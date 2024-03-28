@@ -97,7 +97,11 @@ export class PositionManager {
     this._countDailyActivePosition(positionCounter, event);
     return this._position!;
   }
-  addSupplyPosition(event: ethereum.Event, sharesSupplied: BigInt): Position {
+  addSupplyPosition(
+    event: ethereum.Event,
+    sharesSupplied: BigInt,
+    assets: BigInt
+  ): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
       positionCounter = new _PositionCounter(this._counterID);
@@ -115,15 +119,10 @@ export class PositionManager {
       position = this._createPosition(
         positionID,
         event,
-        TransactionType.DEPOSIT_COLLATERAL
+        TransactionType.DEPOSIT
       );
     }
 
-    const amountSupplied = toAssetsDown(
-      sharesSupplied,
-      this._market.totalSupplyShares,
-      this._market.totalSupply
-    );
     position.shares = position.shares
       ? position.shares!.plus(sharesSupplied)
       : sharesSupplied;
@@ -136,8 +135,8 @@ export class PositionManager {
 
     position.balance = totalSupply;
     position.principal = position.principal
-      ? position.principal!.plus(amountSupplied)
-      : amountSupplied;
+      ? position.principal!.plus(assets)
+      : assets;
     position.depositCount += 1;
     position.save();
 
@@ -291,7 +290,8 @@ export class PositionManager {
 
   reduceSupplyPosition(
     event: ethereum.Event,
-    sharesWithdrawn: BigInt
+    sharesWithdrawn: BigInt,
+    assets: BigInt
   ): Position {
     let positionCounter = _PositionCounter.load(this._counterID);
     if (!positionCounter) {
@@ -312,11 +312,6 @@ export class PositionManager {
       ]);
       return this._position!;
     }
-    const amountWithdrawn = toAssetsDown(
-      sharesWithdrawn,
-      this._market.totalSupplyShares,
-      this._market.totalSupply
-    );
     position.shares = position.shares!.minus(sharesWithdrawn);
 
     const totalSupply = toAssetsDown(
@@ -326,7 +321,7 @@ export class PositionManager {
     );
 
     position.balance = totalSupply;
-    position.principal = position.principal!.minus(amountWithdrawn);
+    position.principal = position.principal!.minus(assets);
     position.withdrawCount += 1;
     this._position = position;
     if (position.shares!.equals(BigInt.zero())) {

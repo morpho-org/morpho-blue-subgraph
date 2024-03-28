@@ -24,7 +24,7 @@ import { BadDebtRealization } from "../generated/schema";
 import { createMarket, getMarket, getZeroMarket } from "./initializers/markets";
 import { getProtocol } from "./initializers/protocol";
 import { AccountManager } from "./sdk/account";
-import { BIGDECIMAL_WAD, PositionSide } from "./sdk/constants";
+import { BIGDECIMAL_WAD, BIGINT_WAD, PositionSide } from "./sdk/constants";
 import { DataManager } from "./sdk/manager";
 import { PositionManager } from "./sdk/position";
 import { TokenManager } from "./sdk/token";
@@ -49,18 +49,20 @@ export function handleAccrueInterest(event: AccrueInterest): void {
       log.critical("Inconsistent fee data for market {}", [
         market.id.toHexString(),
       ]);
-      const protocol = getProtocol();
-      const feeRecipientAccount = new AccountManager(
-        protocol.feeRecipient
-      ).getAccount();
-      const position = new PositionManager(
-        feeRecipientAccount,
-        market,
-        PositionSide.SUPPLIER
-      );
-      // TODO: do not count the fee as a deposit in snapshots etc.
-      position.addSupplyPosition(event, event.params.feeShares);
     }
+
+    const protocol = getProtocol();
+    const feeRecipientAccount = new AccountManager(
+      protocol.feeRecipient
+    ).getAccount();
+    const position = new PositionManager(
+      feeRecipientAccount,
+      market,
+      PositionSide.SUPPLIER
+    );
+    const feeAmount = event.params.interest.times(market.fee).div(BIGINT_WAD);
+    // TODO: do not count the fee as a deposit in snapshots etc.
+    position.addSupplyPosition(event, event.params.feeShares, feeAmount);
   }
 
   market.save();
@@ -122,8 +124,6 @@ export function handleEnableLltv(event: EnableLltv): void {
 export function handleFlashLoan(event: FlashLoan): void {
   const market = getZeroMarket(event);
   const manager = new DataManager(market.id, event);
-
-  const token = new TokenManager(event.params.token, event);
 
   manager.createFlashloan(
     event.params.token,
@@ -269,7 +269,8 @@ export function handleSupply(event: Supply): void {
 
   const position = positionManager.addSupplyPosition(
     event,
-    event.params.shares
+    event.params.shares,
+    event.params.assets
   );
 
   market.totalSupply = market.totalSupply.plus(event.params.assets);
@@ -316,7 +317,8 @@ export function handleWithdraw(event: Withdraw): void {
 
   const position = positionManager.reduceSupplyPosition(
     event,
-    event.params.shares
+    event.params.shares,
+    event.params.assets
   );
 
   market.totalSupply = market.totalSupply.minus(event.params.assets);

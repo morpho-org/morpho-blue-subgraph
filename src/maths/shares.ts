@@ -3,7 +3,7 @@ import { BigInt } from "@graphprotocol/graph-ts";
 import { mulDivDown, mulDivUp } from "./maths";
 
 const VIRTUAL_SHARES = BigInt.fromI32(10).pow(6);
-const VIRTUAL_ASSETS = BigInt.zero();
+const VIRTUAL_ASSETS = BigInt.fromI32(1);
 
 export function toAssetsUp(
   shares: BigInt,
