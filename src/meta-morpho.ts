@@ -58,6 +58,7 @@ import {
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
 import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
+import { cloneRate } from "./utils/rate";
 
 export function handleSubmitMarketRemoval(
   event: SubmitMarketRemovalEvent
@@ -184,7 +185,7 @@ export function handleDeposit(event: DepositEvent): void {
   deposit.shares = event.params.shares;
   deposit.metaMorpho = mm.id;
   deposit.metaMorphoPosition = position.id;
-  deposit.rate = mm.rate;
+  deposit.rate = cloneRate(mm.rate, event.block.timestamp).id;
   deposit.save();
 }
 
@@ -694,7 +695,7 @@ export function handleTransfer(event: TransferEvent): void {
   transfer.metaMorphoPositionFrom = fromPosition.id;
   transfer.metaMorphoPositionTo = toPosition.id;
   transfer.metaMorpho = mm.id;
-  transfer.rate = mm.rate;
+  transfer.rate = cloneRate(mm.rate, event.block.timestamp).id;
   transfer.save();
 }
 
@@ -752,6 +753,6 @@ export function handleWithdraw(event: WithdrawEvent): void {
   withdraw.shares = event.params.shares;
   withdraw.metaMorpho = mm.id;
   withdraw.metaMorphoPosition = position.id;
-  withdraw.rate = mm.rate;
+  withdraw.rate = cloneRate(mm.rate, event.block.timestamp).id;
   withdraw.save();
 }
