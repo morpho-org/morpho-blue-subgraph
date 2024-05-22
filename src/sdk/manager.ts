@@ -229,6 +229,7 @@ export class DataManager {
     deposit.account = position.account;
     deposit.market = this._market.id;
     deposit.position = position.id;
+    deposit.rates = this._market.rates;
     deposit.asset = position.asset;
     deposit.amount = amount;
     deposit.amountUSD = amountUSD;
@@ -268,6 +269,7 @@ export class DataManager {
     deposit.market = this._market.id;
     deposit.position = position.id;
     deposit.asset = position.asset;
+    deposit.rates = this._market.rates;
     deposit.shares = shares;
     deposit.amount = amount;
     deposit.amountUSD = amountUSD;
@@ -303,6 +305,7 @@ export class DataManager {
     withdraw.market = this._market.id;
     withdraw.position = position.id;
     withdraw.asset = position.asset;
+    withdraw.rates = this._market.rates;
     withdraw.amount = amount;
     withdraw.amountUSD = amountUSD;
     withdraw.isCollateral = true;
@@ -346,6 +349,7 @@ export class DataManager {
     withdraw.market = this._market.id;
     withdraw.position = position.id;
     withdraw.asset = this._market.borrowedToken;
+    withdraw.rates = this._market.rates;
     withdraw.amount = amount;
     withdraw.amountUSD = amountUSD;
     withdraw.isCollateral = false;
@@ -380,6 +384,7 @@ export class DataManager {
     borrow.market = this._market.id;
     borrow.position = position.id;
     borrow.asset = this._market.borrowedToken;
+    borrow.rates = this._market.rates;
     borrow.amount = amount;
     borrow.amountUSD = amountUSD;
     borrow.shares = shares;
@@ -418,6 +423,8 @@ export class DataManager {
     repay.market = this._market.id;
     repay.position = position.id;
     repay.asset = position.asset;
+
+    repay.rates = this._market.rates;
     repay.amount = amount;
     repay.shares = shares;
     repay.amountUSD = amountUSD;

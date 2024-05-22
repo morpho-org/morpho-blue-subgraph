@@ -1638,6 +1638,9 @@ type Deposit implements Event @entity(immutable: true) @transaction {
 
   isCollateral: Boolean!
   shares: BigInt
+
+  " All interest rates for this borrow. Should be in APR format "
+  rates: [InterestRate!]
 }
 
 type Withdraw implements Event @entity(immutable: true) @transaction {
@@ -1698,6 +1701,9 @@ type Withdraw implements Event @entity(immutable: true) @transaction {
   isCollateral: Boolean!
 
   shares: BigInt
+
+  " All interest rates for this borrow. Should be in APR format "
+  rates: [InterestRate!]
 }
 
 # For CDPs, use this for mint events
@@ -1752,6 +1758,9 @@ type Borrow implements Event @entity(immutable: true) @transaction {
 
   #### Addons ####
   shares: BigInt!
+
+  " All interest rates for this borrow. Should be in APR format "
+  rates: [InterestRate!]
 }
 
 # For CDPs, use this for burn events
@@ -1806,6 +1815,9 @@ type Repay implements Event @entity(immutable: true) @transaction {
 
   #### Addons ####
   shares: BigInt!
+
+  " All interest rates for this Repay. Should be in APR format "
+  rates: [InterestRate!]
 }
 
 type Liquidate implements Event @entity(immutable: true) @transaction {
@@ -2216,6 +2228,8 @@ type MetaMorphoDeposit @entity(immutable: true) {
   metaMorpho: MetaMorpho!
 
   shares: BigInt!
+
+  rate: InterestRate!
 }
 
 type MetaMorphoWithdraw @entity(immutable: true) {
@@ -2267,6 +2281,8 @@ type MetaMorphoWithdraw @entity(immutable: true) {
   metaMorpho: MetaMorpho!
 
   shares: BigInt!
+
+  rate: InterestRate!
 }
 
 type AllocatorSet @entity(immutable: true) {
@@ -2353,5 +2369,7 @@ type MetaMorphoTransfer @entity(immutable: true) {
   metaMorphoPositionTo: MetaMorphoPosition!
 
   metaMorpho: MetaMorpho!
+
+  rate: InterestRate!
 
 }

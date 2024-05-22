@@ -184,6 +184,7 @@ export function handleDeposit(event: DepositEvent): void {
   deposit.shares = event.params.shares;
   deposit.metaMorpho = mm.id;
   deposit.metaMorphoPosition = position.id;
+  deposit.rate = mm.rate;
   deposit.save();
 }
 
@@ -693,6 +694,7 @@ export function handleTransfer(event: TransferEvent): void {
   transfer.metaMorphoPositionFrom = fromPosition.id;
   transfer.metaMorphoPositionTo = toPosition.id;
   transfer.metaMorpho = mm.id;
+  transfer.rate = mm.rate;
   transfer.save();
 }
 
@@ -750,5 +752,6 @@ export function handleWithdraw(event: WithdrawEvent): void {
   withdraw.shares = event.params.shares;
   withdraw.metaMorpho = mm.id;
   withdraw.metaMorphoPosition = position.id;
+  withdraw.rate = mm.rate;
   withdraw.save();
 }
