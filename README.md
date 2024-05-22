@@ -12,8 +12,3 @@ The list is updated each time the DAO is trusting a new market.
 
 However, the subgraph is listing all created markets and computes the price by mapping a token symbol with a Chainlink price feed
 to compute the USD or ETH price of an asset (if a price feed exists).
-
-
-
-TODO:
-checkk si les addons sont biens initialisés
