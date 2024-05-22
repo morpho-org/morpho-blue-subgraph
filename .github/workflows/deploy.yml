@@ -1,10 +1,8 @@
-# trigger with new tag
 name: Deploy subgraphs
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [released]
 
 jobs:
   deploy-studio:
@@ -31,7 +29,7 @@ jobs:
       - name: Deploy to the studio
         run: |
           yarn graph auth --product subgraph-studio ${{ secrets.SUBGRAPH_STUDIO_KEY }} && \
-          yarn deploy morpho-blue --version-label ${{ github.ref }}
+          yarn deploy morpho-blue --version-label ${{ github.release.tag_name }}
   deploy-satsuma:
     name: Deploy to Satsuma
     runs-on: ubuntu-latest
@@ -56,7 +54,7 @@ jobs:
       - name: Deploy to the studio
         run: |
           yarn deploy morpho-blue \
-          --version-label ${{ github.ref }} \
+          --version-label ${{ github.release.tag_name }} \
           --node https://subgraphs.alchemy.com/api/subgraphs/deploy   \
           --deploy-key ${{ secrets.SATSUMA_DEPLOY_KEY }} \
           --ipfs https://ipfs.satsuma.xy
