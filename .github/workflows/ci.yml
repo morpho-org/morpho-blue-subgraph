@@ -35,7 +35,7 @@ jobs:
   release:
     name: Create new release
     runs-on: ubuntu-latest
-    needs: deployment
+    needs: builds
     steps:
       - uses: actions/checkout@v3
 
