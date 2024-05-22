@@ -633,7 +633,8 @@ export function handleTransfer(event: TransferEvent): void {
   updateMMRate(event.address);
   if (
     event.params.from.equals(Address.zero()) ||
-    event.params.to.equals(Address.zero())
+    event.params.to.equals(Address.zero()) ||
+    event.params.value.isZero()
   ) {
     // mint / burn transfer
     return;
