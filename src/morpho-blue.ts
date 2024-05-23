@@ -24,7 +24,12 @@ import { BadDebtRealization } from "../generated/schema";
 import { createMarket, getMarket, getZeroMarket } from "./initializers/markets";
 import { getProtocol } from "./initializers/protocol";
 import { AccountManager } from "./sdk/account";
-import { BIGDECIMAL_WAD, BIGINT_WAD, PositionSide } from "./sdk/constants";
+import {
+  BIGDECIMAL_WAD,
+  BIGINT_ONE,
+  BIGINT_WAD,
+  PositionSide,
+} from "./sdk/constants";
 import { DataManager } from "./sdk/manager";
 import { PositionManager } from "./sdk/position";
 import { TokenManager } from "./sdk/token";
@@ -140,6 +145,22 @@ export function handleLiquidate(event: Liquidate): void {
   market.totalCollateral = market.totalCollateral.minus(
     event.params.seizedAssets
   );
+
+  market.totalBorrowShares = market.totalBorrowShares
+    .minus(event.params.repaidShares)
+    .minus(event.params.badDebtShares);
+
+  market.totalBorrow = market.totalBorrow.minus(event.params.repaidAssets);
+
+  if (market.totalBorrow.equals(BIGINT_ONE.neg()))
+    // can happen due to that: https://github.com/morpho-org/morpho-blue/blob/main/src/Morpho.sol#L386
+    market.totalBorrow = BigInt.zero();
+
+  if (event.params.badDebtShares.gt(BigInt.zero())) {
+    market.totalSupply = market.totalSupply.minus(event.params.badDebtAssets);
+    market.totalBorrow = market.totalBorrow.minus(event.params.badDebtAssets);
+  }
+
   market.save();
 
   const liquidatorAccount = new AccountManager(
@@ -178,21 +199,13 @@ export function handleLiquidate(event: Liquidate): void {
     new AccountManager(event.params.caller).getAccount(),
     borrowPosition.getPosition()!,
     collateralPosition.getPosition()!,
-
     event.params.repaidAssets,
     event.params.seizedAssets
   );
 
   collateralPosition.reduceCollateralPosition(event, event.params.seizedAssets);
 
-  market.totalBorrow = market.totalBorrow.minus(event.params.repaidAssets);
-  market.totalBorrowShares = market.totalBorrowShares
-    .minus(event.params.repaidShares)
-    .minus(event.params.badDebtShares);
   if (event.params.badDebtShares.gt(BigInt.zero())) {
-    market.totalSupply = market.totalSupply.minus(event.params.badDebtAssets);
-    market.totalBorrow = market.totalBorrow.minus(event.params.badDebtAssets);
-
     const badDebtRealization = new BadDebtRealization(liquidate.id);
     badDebtRealization.liquidation = liquidate.id;
     badDebtRealization.market = market.id;
@@ -205,7 +218,6 @@ export function handleLiquidate(event: Liquidate): void {
     );
     badDebtRealization.save();
   }
-  market.save();
 
   manager.updateMarketAndProtocolData();
 }
