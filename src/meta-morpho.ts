@@ -143,6 +143,8 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
 export function handleApproval(event: ApprovalEvent): void {}
 
 export function handleDeposit(event: DepositEvent): void {
+  if (event.params.shares.isZero()) return;
+
   const mm = loadMetaMorpho(event.address);
   mm.totalShares = mm.totalShares.plus(event.params.shares);
   mm.save();
@@ -710,6 +712,7 @@ export function handleUpdateLastTotalAssets(
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
+  if (event.params.shares.isZero()) return;
   const mm = loadMetaMorpho(event.address);
   mm.totalShares = mm.totalShares.minus(event.params.shares);
   mm.save();

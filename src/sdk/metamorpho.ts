@@ -53,8 +53,6 @@ export function loadMetaMorphoMarket(
 }
 export function updateMMRate(address: Address): void {
   const mm = loadMetaMorpho(address);
-  // TODO: idle will be removed soon, so not implemented here.
-  // it will be defined with a market with a 0 supply rate
   let accumulator = BigDecimal.zero();
   let total = BigDecimal.zero();
   for (let i = 0; i < mm.withdrawQueue.length; i++) {
