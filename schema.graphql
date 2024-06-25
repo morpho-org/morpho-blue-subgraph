@@ -25,6 +25,7 @@ enum Network {
   MATIC # aka Polygon
   GNOSIS
   GOERLI
+  BASE
 }
 
 enum ProtocolType {

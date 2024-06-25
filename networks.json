@@ -1,16 +1,24 @@
 {
   "mainnet": {
     "MorphoBlue": {
-      "address": "0x0000000000000000000000000000000000000000",
-      "startBlock": 0
+      "address": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "startBlock": 18883124
+
     },
-    "Contract": {
-      "address": "0x38989BBA00BDF8181F4082995b3DEAe96163aC5D"
+    "MetaMorphoFactory": {
+      "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
+      "startBlock": 18925584
     }
   },
-  "goerli": {
-    "Contract": {
-      "address": "0x0000000000000000000000000000000000000000"
+  "base": {
+    "MorphoBlue": {
+      "address": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+      "startBlock": 13977148
+
+    },
+    "MetaMorphoFactory": {
+      "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
+      "startBlock": 13978134
     }
   }
 }
