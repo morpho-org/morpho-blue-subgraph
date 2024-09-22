@@ -14,6 +14,10 @@ jobs:
   builds:
     name: Build of Morpho Blue Subgraph
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        network: [mainnet, base]
+
     steps:
       - uses: actions/checkout@v3
 
@@ -30,7 +34,7 @@ jobs:
         run: yarn codegen
 
       - name: Build subgraph
-        run: yarn build
+        run: yarn build:${{ matrix.network }}
 
   release:
     name: Create new release
