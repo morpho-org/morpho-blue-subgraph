@@ -149,7 +149,7 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
     event.params.vault,
     event.params.id
   );
-  const newFlowCapOut = paMarket.flowCapIn.minus(event.params.withdrawnAssets);
+  const newFlowCapOut = paMarket.flowCapOut.minus(event.params.withdrawnAssets);
 
   const eventId = event.transaction.hash.concat(
     Bytes.fromI32(event.logIndex.toI32())
