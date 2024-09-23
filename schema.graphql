@@ -2391,42 +2391,70 @@ type MetaMorphoTransfer @entity(immutable: true) {
 }
 
 type MetaMorphoPublicAllocator @entity {
+  " { MetaMorpho ID } "
   id: Bytes!
 
+  " The MetaMorpho associated with this public allocator vault configuration "
   metaMorpho: MetaMorpho!
 
+  " The allocator associated with this public allocator vault configuration"
   allocator: MetaMorphoAllocator
 
+  " The current fee per public reallocation "
   fee: BigInt!
+  " The fee accrued by the admin "
   accruedFee: BigInt!
+  " The fee that can be claimed by the admin "
   claimableFee: BigInt!
+  " The fee claimed by the admin "
   claimedFee: BigInt!
 
+  " The current admin of the public allocator. Value is optional & fallbacks on the vault owner "
   admin: Account
 
+  " All the markets public allocator configurations. Values contained are the latest values "
   markets: [MetaMorphoPublicAllocatorMarket!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+
+  " All the public flow caps changes for this MetaMorpho (on all markets) "
   setFlowCapsEvents: [SetFlowCapsEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+
+  " All the public flowIn modifications for this MetaMorpho (on all markets) "
   reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+
+  " All the public flowOut modifications for this MetaMorpho (on all markets) "
   withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+
+  " All the flow caps changes for this MetaMorpho (on all markets) "
   flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "metaMorphoPublicAllocator")
 
 }
 
 type MetaMorphoPublicAllocatorMarket @entity {
+  " { MetaMorpho ID }-{ Market ID } "
   id: Bytes!
 
+  " The MetaMorpho public allocator configuration. Values contained are the latest values "
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
+  " The MetaMorpho  market associated with the public allocator "
   market: MetaMorphoMarket!
 
+  " The current flow cap in for this market for the given MetaMorpho "
   flowCapIn: BigInt!
+  " The current flow cap out for this market for the given MetaMorpho "
   flowCapOut: BigInt!
 
+  " All the public flowIn modifications for this market for the given MetaMorpho "
   reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "marketPublicAllocator")
+
+  " All the public flowOut modifications for this market for the given MetaMorpho "
   withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "marketPublicAllocator")
+
+  " All the flow caps changes for this market for the given MetaMorpho "
   flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "marketPublicAllocator")
 
 }
 
+" The event emitted when the flow caps are set by the public allocator admin "
 type SetFlowCapsEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
@@ -2456,13 +2484,17 @@ type SetFlowCapsEvent @entity(immutable: true) @transaction {
   " Timestamp of this event "
   timestamp: BigInt!
 
+  " Author of the Public allocator call "
   author: Account!
 
+  " The metaMorpho public allocator configuration. Values contained are the latest values "
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
+  " The different flow caps set by this event. "
   flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "setFlowCapsEvent")
 }
 
+" The event emitted when the public allocator reallocates assets to a market. This function is publicly accessible "
 type PublicAllocatorReallocationToEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
@@ -2492,17 +2524,23 @@ type PublicAllocatorReallocationToEvent @entity(immutable: true) @transaction {
   " Timestamp of this event "
   timestamp: BigInt!
 
+  " Author of the Public allocator call "
   author: Account!
 
+  " The metaMorpho public allocator configuration. Values contained are the latest values "
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
+  " The latest market public allocator configuration. Values contained are the latest values "
   marketPublicAllocator: MetaMorphoPublicAllocatorMarket!
 
+  " The amount of assets supplied "
   suppliedAssets: BigInt!
 
+  " The flow caps modification set by this event "
   flowCaps: MarketFlowCapsSet! @derivedFrom(field: "publicReallocationEvent")
 }
 
+" The event emitted when the public allocator withdraws assets from a market. This function is publicly accessible "
 type PublicAllocatorWithdrawalEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
@@ -2532,33 +2570,51 @@ type PublicAllocatorWithdrawalEvent @entity(immutable: true) @transaction {
   " Timestamp of this event "
   timestamp: BigInt!
 
+  " Author of the Public allocator call "
   author: Account!
 
+  " The metaMorpho public allocator configuration. Values contained are the latest values "
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator
 
+  " The latest market public allocator configuration. Values contained are the latest values "
   marketPublicAllocator: MetaMorphoPublicAllocatorMarket
 
+  " The amount of assets withdrawn "
   withdrawnAssets: BigInt!
 
+  " The flow caps modification set by this event "
   flowCaps: MarketFlowCapsSet! @derivedFrom(field: "publicWithdrawalEvent")
 }
 
+" Register of any change of the flow caps, either if it comes from a public call or an admin call (FlowCapSetEvent) "
 type MarketFlowCapsSet @entity(immutable: true) {
+  " { Transaction hash }{ Log index }{ markedId if applicable } "
   id: Bytes!
 
+  " The metaMorpho public allocator configuration. Values contained are the latest values "
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
+  " The latest market public allocator configuration. Values contained are the latest values "
   marketPublicAllocator: MetaMorphoPublicAllocatorMarket!
 
+  " The previous flow cap in value "
   prevFlowCapIn: BigInt!
+  " The new flow cap in value "
   flowCapIn: BigInt!
 
+  " The previous flow cap out value "
   prevFlowCapOut: BigInt!
+  " The new flow cap out value "
   flowCapOut: BigInt!
 
 
+  " The set flow caps event that has set this flow caps. null if this is not set by a set flow caps event "
   setFlowCapsEvent: SetFlowCapsEvent
+
+  " The public reallocation event that has set this flow caps. null if this is not set by a reallocation event "
   publicReallocationEvent: PublicAllocatorReallocationToEvent
+
+  " The public withdrawal event that has set this flow caps. null if this is not set by a withdrawal event "
   publicWithdrawalEvent: PublicAllocatorWithdrawalEvent
 
 }
