@@ -1,4 +1,10 @@
-import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
+import {
+  Address,
+  BigInt,
+  Bytes,
+  log,
+  dataSource,
+} from "@graphprotocol/graph-ts";
 
 import {
   AllocatorSet,
@@ -58,6 +64,7 @@ import {
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
 import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
+import { publicAllocatorPerNetwork } from "./utils/publicAllocator";
 import { cloneRate } from "./utils/rate";
 
 export function handleSubmitMarketRemoval(
@@ -394,7 +401,18 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
     allocator.metaMorpho = mm.id;
   }
   allocator.isCurrentAllocator = event.params.isAllocator;
+  allocator.isPublicAllocator = publicAllocatorPerNetwork(
+    dataSource.network()
+  ).equals(event.params.allocator);
+
   allocator.save();
+
+  if (allocator.isPublicAllocator && event.params.isAllocator) {
+    mm.hasPublicAllocator = true;
+  } else {
+    mm.hasPublicAllocator = false;
+  }
+  mm.save();
 
   const allocatorSet = new AllocatorSet(
     event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
@@ -420,6 +438,7 @@ export function handleSetSkimRecipient(event: SetSkimRecipientEvent): void {}
 export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   // Supply queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
   const mm = loadMetaMorpho(event.address);
+
   const newSupplyQueue: Array<Bytes> = [];
   const addedMarkets: Array<Bytes> = [];
   const seen = new Map<Bytes, boolean>();
