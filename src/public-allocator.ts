@@ -9,6 +9,7 @@ import {
   TransferFee,
 } from "../generated/PublicAllocator/PublicAllocator";
 import {
+  Account,
   MarketFlowCapsSet,
   MetaMorpho,
   MetaMorphoAllocator,
@@ -41,6 +42,9 @@ export function loadPublicAllocatorVault(
     pa.metaMorpho = mm.id;
 
     pa.fee = BigInt.zero();
+    pa.accruedFee = BigInt.zero();
+    pa.claimableFee = BigInt.zero();
+    pa.claimedFee = BigInt.zero();
     pa.save();
   }
   return pa;
@@ -132,6 +136,11 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
     return;
   }
 
+  const paVault = loadPublicAllocatorVault(event.params.vault);
+  paVault.accruedFee = paVault.accruedFee.plus(paVault.fee);
+  paVault.claimableFee = paVault.claimableFee.plus(paVault.fee);
+  paVault.save();
+
   const paMarket = loadPublicAllocatorMarket(
     event.params.vault,
     event.params.id
@@ -177,12 +186,18 @@ export function handleSetAdmin(event: SetAdmin): void {
   if (!metaMorphoExists(event.params.vault)) {
     return;
   }
+  const paVault = loadPublicAllocatorVault(event.params.vault);
+  paVault.admin = new Account(event.params.admin).id;
+  paVault.save();
 }
 
 export function handleSetFee(event: SetFee): void {
   if (!metaMorphoExists(event.params.vault)) {
     return;
   }
+  const paVault = loadPublicAllocatorVault(event.params.vault);
+  paVault.fee = event.params.fee;
+  paVault.save();
 }
 
 export function handleSetFlowCaps(event: SetFlowCaps): void {
@@ -196,4 +211,8 @@ export function handleTransferFee(event: TransferFee): void {
   if (!metaMorphoExists(event.params.vault)) {
     return;
   }
+  const pa = loadPublicAllocatorVault(event.params.vault);
+  pa.claimableFee = pa.claimableFee.minus(event.params.amount);
+  pa.claimedFee = pa.claimedFee.plus(event.params.amount);
+  pa.save();
 }

@@ -1368,6 +1368,8 @@ type Account @entity @regularPolling {
   metaMorphoTransferFrom: [MetaMorphoTransfer!]! @derivedFrom(field: "from")
   metaMorphoTransferTo: [MetaMorphoTransfer!]! @derivedFrom(field: "to")
 
+  publicAllocatorAdmin: [MetaMorphoPublicAllocator!]! @derivedFrom(field: "admin")
+
 
 }
 
@@ -2393,6 +2395,9 @@ type MetaMorphoPublicAllocator @entity(immutable: true) {
   allocator: MetaMorphoAllocator
 
   fee: BigInt!
+  accruedFee: BigInt!
+  claimableFee: BigInt!
+  claimedFee: BigInt!
 
   admin: Account
 
