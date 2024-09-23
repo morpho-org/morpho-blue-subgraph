@@ -2424,7 +2424,7 @@ type MetaMorphoPublicAllocatorMarket @entity(immutable: true) {
 
 }
 
-type SetFlowCapsEvent implements Event @entity(immutable: true) @transaction {
+type SetFlowCapsEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
   id: Bytes!
@@ -2458,7 +2458,7 @@ type SetFlowCapsEvent implements Event @entity(immutable: true) @transaction {
   flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "setFlowCapsEvent")
 }
 
-type PublicAllocatorReallocationToEvent implements Event @entity(immutable: true) @transaction {
+type PublicAllocatorReallocationToEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
   id: Bytes!
@@ -2496,7 +2496,7 @@ type PublicAllocatorReallocationToEvent implements Event @entity(immutable: true
   flowCaps: MarketFlowCapsSet! @derivedFrom(field: "publicReallocationEvent")
 }
 
-type PublicAllocatorWithdrawalEvent implements Event @entity(immutable: true) @transaction {
+type PublicAllocatorWithdrawalEvent @entity(immutable: true) @transaction {
 
   " { Transaction hash }{ Log index } "
   id: Bytes!
