@@ -122,6 +122,7 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
   reallocateToEvent.gasLimit = event.transaction.gasLimit;
   reallocateToEvent.blockNumber = event.block.number;
   reallocateToEvent.timestamp = event.block.timestamp;
+  reallocateToEvent.author = new Account(event.params.sender).id;
   reallocateToEvent.metaMorphoPublicAllocator =
     paMarket.metaMorphoPublicAllocator;
   reallocateToEvent.marketPublicAllocator = paMarket.id;
@@ -175,6 +176,7 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
   withdrawalEvent.gasLimit = event.transaction.gasLimit;
   withdrawalEvent.blockNumber = event.block.number;
   withdrawalEvent.timestamp = event.block.timestamp;
+  withdrawalEvent.author = new Account(event.params.sender).id;
   withdrawalEvent.metaMorphoPublicAllocator =
     paMarket.metaMorphoPublicAllocator;
   withdrawalEvent.marketPublicAllocator = paMarket.id;
@@ -225,6 +227,8 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
   setFlowCapsEvent.gasLimit = event.transaction.gasLimit;
   setFlowCapsEvent.blockNumber = event.block.number;
   setFlowCapsEvent.timestamp = event.block.timestamp;
+  setFlowCapsEvent.author = new Account(event.params.sender).id;
+
   setFlowCapsEvent.metaMorphoPublicAllocator = paVault.id;
 
   setFlowCapsEvent.save();

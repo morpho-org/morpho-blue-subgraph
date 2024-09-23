@@ -1369,6 +1369,9 @@ type Account @entity @regularPolling {
   metaMorphoTransferTo: [MetaMorphoTransfer!]! @derivedFrom(field: "to")
 
   publicAllocatorAdmin: [MetaMorphoPublicAllocator!]! @derivedFrom(field: "admin")
+  publicAllocatorReallocateToAuthor: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "author")
+  publicAllocatorWithdrawalAuthor: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "author")
+  publicAllocatorSetFlowCapsAuthor: [SetFlowCapsEvent!]! @derivedFrom(field: "author")
 
 
 }
@@ -2387,7 +2390,7 @@ type MetaMorphoTransfer @entity(immutable: true) {
 
 }
 
-type MetaMorphoPublicAllocator @entity(immutable: true) {
+type MetaMorphoPublicAllocator @entity {
   id: Bytes!
 
   metaMorpho: MetaMorpho!
@@ -2409,7 +2412,7 @@ type MetaMorphoPublicAllocator @entity(immutable: true) {
 
 }
 
-type MetaMorphoPublicAllocatorMarket @entity(immutable: true) {
+type MetaMorphoPublicAllocatorMarket @entity {
   id: Bytes!
 
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
@@ -2453,6 +2456,8 @@ type SetFlowCapsEvent @entity(immutable: true) @transaction {
   " Timestamp of this event "
   timestamp: BigInt!
 
+  author: Account!
+
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
   flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "setFlowCapsEvent")
@@ -2486,6 +2491,8 @@ type PublicAllocatorReallocationToEvent @entity(immutable: true) @transaction {
 
   " Timestamp of this event "
   timestamp: BigInt!
+
+  author: Account!
 
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
@@ -2524,6 +2531,8 @@ type PublicAllocatorWithdrawalEvent @entity(immutable: true) @transaction {
 
   " Timestamp of this event "
   timestamp: BigInt!
+
+  author: Account!
 
   metaMorphoPublicAllocator: MetaMorphoPublicAllocator
 
