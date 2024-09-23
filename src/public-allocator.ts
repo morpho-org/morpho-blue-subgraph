@@ -17,6 +17,7 @@ import {
   MetaMorphoPublicAllocatorMarket,
   PublicAllocatorReallocationToEvent,
   PublicAllocatorWithdrawalEvent,
+  SetFlowCapsEvent,
 } from "../generated/schema";
 
 import { loadMetaMorpho, loadMetaMorphoMarket } from "./sdk/metamorpho";
@@ -204,7 +205,45 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
   if (!metaMorphoExists(event.params.vault)) {
     return;
   }
-  const mm = loadMetaMorpho(event.params.vault);
+  const paVault = loadPublicAllocatorVault(event.params.vault);
+
+  const eventId = event.transaction.hash.concat(
+    Bytes.fromI32(event.logIndex.toI32())
+  );
+
+  const setFlowCapsEvent = new SetFlowCapsEvent(eventId);
+
+  setFlowCapsEvent.hash = event.transaction.hash;
+  setFlowCapsEvent.nonce = event.transaction.nonce;
+  setFlowCapsEvent.logIndex = event.logIndex.toI32();
+  setFlowCapsEvent.gasPrice = event.transaction.gasPrice;
+  setFlowCapsEvent.gasUsed = event.receipt ? event.receipt!.gasUsed : null;
+  setFlowCapsEvent.gasLimit = event.transaction.gasLimit;
+  setFlowCapsEvent.blockNumber = event.block.number;
+  setFlowCapsEvent.timestamp = event.block.timestamp;
+  setFlowCapsEvent.metaMorpho = paVault.id;
+
+  setFlowCapsEvent.save();
+
+  for (let i = 0; i < event.params.config.length; i++) {
+    const config = event.params.config[i];
+
+    const paMarket = loadPublicAllocatorMarket(event.params.vault, config.id);
+
+    const marketFlowCapsSet = new MarketFlowCapsSet(eventId.concat(config.id));
+    marketFlowCapsSet.metaMorpho = paMarket.metaMorpho;
+    marketFlowCapsSet.market = paMarket.id;
+    marketFlowCapsSet.prevFlowCapIn = paMarket.flowCapIn;
+    marketFlowCapsSet.flowCapIn = config.caps.maxIn;
+    marketFlowCapsSet.prevFlowCapOut = paMarket.flowCapOut;
+    marketFlowCapsSet.flowCapOut = config.caps.maxOut;
+    marketFlowCapsSet.setFlowCapsEvent = setFlowCapsEvent.id;
+    marketFlowCapsSet.save();
+
+    paMarket.flowCapIn = config.caps.maxIn;
+    paMarket.flowCapOut = config.caps.maxOut;
+    paMarket.save();
+  }
 }
 
 export function handleTransferFee(event: TransferFee): void {

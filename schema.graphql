@@ -2457,7 +2457,6 @@ type SetFlowCapsEvent implements Event @entity(immutable: true) @transaction {
 
   metaMorpho: MetaMorphoPublicAllocator!
 
-  market: MetaMorphoPublicAllocatorMarket!
 
   flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "setFlowCapsEvent")
 }
