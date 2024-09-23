@@ -2401,27 +2401,26 @@ type MetaMorphoPublicAllocator @entity(immutable: true) {
 
   admin: Account
 
-  markets: [MetaMorphoPublicAllocatorMarket!]! @derivedFrom(field: "metaMorpho")
-  setFlowCapsEvents: [SetFlowCapsEvent!]! @derivedFrom(field: "metaMorpho")
-  reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "metaMorpho")
-  withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "metaMorpho")
-  flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "metaMorpho")
+  markets: [MetaMorphoPublicAllocatorMarket!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+  setFlowCapsEvents: [SetFlowCapsEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+  reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+  withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "metaMorphoPublicAllocator")
+  flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "metaMorphoPublicAllocator")
 
 }
 
 type MetaMorphoPublicAllocatorMarket @entity(immutable: true) {
   id: Bytes!
 
-  metaMorpho: MetaMorphoPublicAllocator!
+  metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
   market: MetaMorphoMarket!
 
   flowCapIn: BigInt!
   flowCapOut: BigInt!
 
-  setFlowCapsEvents: [SetFlowCapsEvent!]! @derivedFrom(field: "market")
-  reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "market")
-  withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "market")
-  flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "market")
+  reallocationToEvents: [PublicAllocatorReallocationToEvent!]! @derivedFrom(field: "marketPublicAllocator")
+  withdrawalEvents: [PublicAllocatorWithdrawalEvent!]! @derivedFrom(field: "marketPublicAllocator")
+  flowCapsChanges: [MarketFlowCapsSet!]! @derivedFrom(field: "marketPublicAllocator")
 
 }
 
@@ -2454,9 +2453,7 @@ type SetFlowCapsEvent implements Event @entity(immutable: true) @transaction {
   " Timestamp of this event "
   timestamp: BigInt!
 
-
-  metaMorpho: MetaMorphoPublicAllocator!
-
+  metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
   flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "setFlowCapsEvent")
 }
@@ -2490,57 +2487,59 @@ type PublicAllocatorReallocationToEvent implements Event @entity(immutable: true
   " Timestamp of this event "
   timestamp: BigInt!
 
-  metaMorpho: MetaMorphoPublicAllocator!
+  metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
-  market: MetaMorphoPublicAllocatorMarket!
+  marketPublicAllocator: MetaMorphoPublicAllocatorMarket!
 
   suppliedAssets: BigInt!
+
+  flowCaps: MarketFlowCapsSet! @derivedFrom(field: "publicReallocationEvent")
 }
 
 type PublicAllocatorWithdrawalEvent implements Event @entity(immutable: true) @transaction {
 
-      " { Transaction hash }{ Log index } "
-      id: Bytes!
+  " { Transaction hash }{ Log index } "
+  id: Bytes!
 
-      " Transaction hash of the transaction that emitted this event "
-      hash: Bytes!
+  " Transaction hash of the transaction that emitted this event "
+  hash: Bytes!
 
-      " Nonce of the transaction that emitted this event "
-      nonce: BigInt!
+  " Nonce of the transaction that emitted this event "
+  nonce: BigInt!
 
-      " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
-      logIndex: Int!
+  " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
+  logIndex: Int!
 
-      " Price of gas in this transaction "
-      gasPrice: BigInt
+  " Price of gas in this transaction "
+  gasPrice: BigInt
 
-      " Gas used in this transaction. (Optional because not every chain will support this) "
-      gasUsed: BigInt
+  " Gas used in this transaction. (Optional because not every chain will support this) "
+  gasUsed: BigInt
 
-      " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
-      gasLimit: BigInt
+  " Gas limit of this transaction. e.g. the amount of gas the sender will pay "
+  gasLimit: BigInt
 
-      " Block number of this event "
-      blockNumber: BigInt!
+  " Block number of this event "
+  blockNumber: BigInt!
 
-      " Timestamp of this event "
-      timestamp: BigInt!
+  " Timestamp of this event "
+  timestamp: BigInt!
 
-      metaMorpho: MetaMorphoPublicAllocator
+  metaMorphoPublicAllocator: MetaMorphoPublicAllocator
 
-      market: MetaMorphoPublicAllocatorMarket
+  marketPublicAllocator: MetaMorphoPublicAllocatorMarket
 
-        withdrawnAssets: BigInt!
+  withdrawnAssets: BigInt!
 
-      flowCaps: [MarketFlowCapsSet!]! @derivedFrom(field: "publicWithdrawalEvent")
+  flowCaps: MarketFlowCapsSet! @derivedFrom(field: "publicWithdrawalEvent")
 }
 
 type MarketFlowCapsSet @entity(immutable: true) {
   id: Bytes!
 
-  metaMorpho: MetaMorphoPublicAllocator!
+  metaMorphoPublicAllocator: MetaMorphoPublicAllocator!
 
-  market: MetaMorphoPublicAllocatorMarket!
+  marketPublicAllocator: MetaMorphoPublicAllocatorMarket!
 
   prevFlowCapIn: BigInt!
   flowCapIn: BigInt!

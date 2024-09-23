@@ -65,7 +65,7 @@ export function loadPublicAllocatorMarket(
     paMarket.market = mmMarket.id;
 
     const paVault = loadPublicAllocatorVault(metaMorpho);
-    paMarket.metaMorpho = paVault.id;
+    paMarket.metaMorphoPublicAllocator = paVault.id;
 
     paMarket.flowCapIn = BigInt.zero();
     paMarket.flowCapOut = BigInt.zero();
@@ -102,8 +102,9 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
   );
 
   const marketFlowCapsSet = new MarketFlowCapsSet(eventId);
-  marketFlowCapsSet.metaMorpho = paMarket.metaMorpho;
-  marketFlowCapsSet.market = paMarket.market;
+  marketFlowCapsSet.metaMorphoPublicAllocator =
+    paMarket.metaMorphoPublicAllocator;
+  marketFlowCapsSet.marketPublicAllocator = paMarket.market;
 
   marketFlowCapsSet.prevFlowCapIn = paMarket.flowCapIn;
   marketFlowCapsSet.flowCapIn = newFlowCapIn;
@@ -121,8 +122,9 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
   reallocateToEvent.gasLimit = event.transaction.gasLimit;
   reallocateToEvent.blockNumber = event.block.number;
   reallocateToEvent.timestamp = event.block.timestamp;
-  reallocateToEvent.metaMorpho = paMarket.metaMorpho;
-  reallocateToEvent.market = paMarket.id;
+  reallocateToEvent.metaMorphoPublicAllocator =
+    paMarket.metaMorphoPublicAllocator;
+  reallocateToEvent.marketPublicAllocator = paMarket.id;
   reallocateToEvent.suppliedAssets = event.params.suppliedAssets;
   reallocateToEvent.save();
 
@@ -153,8 +155,9 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
   );
 
   const marketFlowCapsSet = new MarketFlowCapsSet(eventId);
-  marketFlowCapsSet.metaMorpho = paMarket.metaMorpho;
-  marketFlowCapsSet.market = paMarket.market;
+  marketFlowCapsSet.metaMorphoPublicAllocator =
+    paMarket.metaMorphoPublicAllocator;
+  marketFlowCapsSet.marketPublicAllocator = paMarket.market;
 
   marketFlowCapsSet.prevFlowCapIn = paMarket.flowCapIn;
   marketFlowCapsSet.flowCapIn = paMarket.flowCapIn;
@@ -172,8 +175,9 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
   withdrawalEvent.gasLimit = event.transaction.gasLimit;
   withdrawalEvent.blockNumber = event.block.number;
   withdrawalEvent.timestamp = event.block.timestamp;
-  withdrawalEvent.metaMorpho = paMarket.metaMorpho;
-  withdrawalEvent.market = paMarket.id;
+  withdrawalEvent.metaMorphoPublicAllocator =
+    paMarket.metaMorphoPublicAllocator;
+  withdrawalEvent.marketPublicAllocator = paMarket.id;
   withdrawalEvent.withdrawnAssets = event.params.withdrawnAssets;
   withdrawalEvent.save();
 
@@ -221,7 +225,7 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
   setFlowCapsEvent.gasLimit = event.transaction.gasLimit;
   setFlowCapsEvent.blockNumber = event.block.number;
   setFlowCapsEvent.timestamp = event.block.timestamp;
-  setFlowCapsEvent.metaMorpho = paVault.id;
+  setFlowCapsEvent.metaMorphoPublicAllocator = paVault.id;
 
   setFlowCapsEvent.save();
 
@@ -231,8 +235,9 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
     const paMarket = loadPublicAllocatorMarket(event.params.vault, config.id);
 
     const marketFlowCapsSet = new MarketFlowCapsSet(eventId.concat(config.id));
-    marketFlowCapsSet.metaMorpho = paMarket.metaMorpho;
-    marketFlowCapsSet.market = paMarket.id;
+    marketFlowCapsSet.metaMorphoPublicAllocator =
+      paMarket.metaMorphoPublicAllocator;
+    marketFlowCapsSet.marketPublicAllocator = paMarket.id;
     marketFlowCapsSet.prevFlowCapIn = paMarket.flowCapIn;
     marketFlowCapsSet.flowCapIn = config.caps.maxIn;
     marketFlowCapsSet.prevFlowCapOut = paMarket.flowCapOut;
