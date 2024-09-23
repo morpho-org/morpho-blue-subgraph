@@ -1,10 +1,4 @@
-import {
-  Address,
-  BigInt,
-  Bytes,
-  log,
-  dataSource,
-} from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AllocatorSet,
@@ -53,6 +47,7 @@ import {
   ReallocateWithdraw as ReallocateWithdrawEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
+import { loadPublicAllocatorVault } from "./public-allocator";
 import { AccountManager } from "./sdk/account";
 import {
   loadMetaMorpho,
@@ -64,7 +59,7 @@ import {
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
 import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
-import { publicAllocatorPerNetwork } from "./utils/publicAllocator";
+import { getPublicAllocatorAddress } from "./utils/publicAllocator";
 import { cloneRate } from "./utils/rate";
 
 export function handleSubmitMarketRemoval(
@@ -401,14 +396,19 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
     allocator.metaMorpho = mm.id;
   }
   allocator.isCurrentAllocator = event.params.isAllocator;
-  allocator.isPublicAllocator = publicAllocatorPerNetwork(
-    dataSource.network()
-  ).equals(event.params.allocator);
+  allocator.isPublicAllocator = getPublicAllocatorAddress().equals(
+    event.params.allocator
+  );
 
   allocator.save();
 
   if (allocator.isPublicAllocator && event.params.isAllocator) {
     mm.hasPublicAllocator = true;
+
+    // Update the public allocator vault. It can be created before the allocator is set, so we need to update it here.
+    const publicAllocatorVault = loadPublicAllocatorVault(event.address);
+    publicAllocatorVault.allocator = allocator.id;
+    publicAllocatorVault.save();
   } else {
     mm.hasPublicAllocator = false;
   }

@@ -1,6 +1,7 @@
-import { Address, log } from "@graphprotocol/graph-ts";
+import { Address, dataSource, log } from "@graphprotocol/graph-ts";
 
-export function publicAllocatorPerNetwork(network: string): Address {
+export function getPublicAllocatorAddress(): Address {
+  const network = dataSource.network();
   if (network === "mainnet") {
     return Address.fromString("0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D");
   }

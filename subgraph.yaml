@@ -155,7 +155,8 @@ dataSources:
         - name: PublicAllocator
           file: ./abis/PublicAllocator.json
       eventHandlers:
-        - event: PublicReallocateTo(indexed address,indexed address,indexed bytes32,uint256)
+        - event: PublicReallocateTo(indexed address,indexed address,indexed
+            bytes32,uint256)
           handler: handlePublicReallocateTo
         - event: PublicWithdrawal(indexed address,indexed address,indexed bytes32,uint256)
           handler: handlePublicWithdrawal
@@ -163,12 +164,12 @@ dataSources:
           handler: handleSetAdmin
         - event: SetFee(indexed address,indexed address,uint256)
           handler: handleSetFee
-        - event: SetFlowCaps(indexed address,indexed address,(bytes32,(uint128,uint128))[])
+        - event: SetFlowCaps(indexed address,indexed
+            address,(bytes32,(uint128,uint128))[])
           handler: handleSetFlowCaps
         - event: TransferFee(indexed address,indexed address,uint256,indexed address)
           handler: handleTransferFee
       file: ./src/public-allocator.ts
-
 templates:
   - kind: ethereum
     name: MetaMorpho
