@@ -96,6 +96,7 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
     event.params.supplyMarketId
   );
   const newFlowCapIn = paMarket.flowCapIn.minus(event.params.suppliedAssets);
+  const newFlowCapOut = paMarket.flowCapOut.plus(event.params.suppliedAssets);
 
   const eventId = event.transaction.hash.concat(
     Bytes.fromI32(event.logIndex.toI32())
@@ -110,7 +111,7 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
   marketFlowCapsSet.flowCapIn = newFlowCapIn;
 
   marketFlowCapsSet.prevFlowCapOut = paMarket.flowCapOut;
-  marketFlowCapsSet.flowCapOut = paMarket.flowCapOut;
+  marketFlowCapsSet.flowCapOut = newFlowCapOut;
 
   const reallocateToEvent = new PublicAllocatorReallocationToEvent(eventId);
 
@@ -132,6 +133,7 @@ export function handlePublicReallocateTo(event: PublicReallocateTo): void {
   marketFlowCapsSet.publicReallocationEvent = reallocateToEvent.id;
   marketFlowCapsSet.save();
   paMarket.flowCapIn = newFlowCapIn;
+  paMarket.flowCapOut = newFlowCapOut;
   paMarket.save();
 }
 
@@ -150,6 +152,7 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
     event.params.id
   );
   const newFlowCapOut = paMarket.flowCapOut.minus(event.params.withdrawnAssets);
+  const newFlowCapIn = paMarket.flowCapIn.plus(event.params.withdrawnAssets);
 
   const eventId = event.transaction.hash.concat(
     Bytes.fromI32(event.logIndex.toI32())
@@ -161,7 +164,7 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
   marketFlowCapsSet.marketPublicAllocator = paMarket.market;
 
   marketFlowCapsSet.prevFlowCapIn = paMarket.flowCapIn;
-  marketFlowCapsSet.flowCapIn = paMarket.flowCapIn;
+  marketFlowCapsSet.flowCapIn = newFlowCapIn;
 
   marketFlowCapsSet.prevFlowCapOut = paMarket.flowCapOut;
   marketFlowCapsSet.flowCapOut = newFlowCapOut;
@@ -185,6 +188,7 @@ export function handlePublicWithdrawal(event: PublicWithdrawal): void {
 
   marketFlowCapsSet.publicWithdrawalEvent = withdrawalEvent.id;
   marketFlowCapsSet.save();
+  paMarket.flowCapIn = newFlowCapIn;
   paMarket.flowCapOut = newFlowCapOut;
   paMarket.save();
 }
