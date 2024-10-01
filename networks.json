@@ -8,6 +8,10 @@
     "MetaMorphoFactory": {
       "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
       "startBlock": 18925584
+    },
+    "PublicAllocator": {
+      "address": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
+      "startBlock": 19375099
     }
   },
   "base": {
@@ -19,6 +23,10 @@
     "MetaMorphoFactory": {
       "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
       "startBlock": 13978134
+    },
+    "PublicAllocator": {
+      "address": "0xA090dD1a701408Df1d4d0B85b716c87565f90467",
+      "startBlock": 13979545
     }
   }
 }
