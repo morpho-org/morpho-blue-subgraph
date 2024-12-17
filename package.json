@@ -14,7 +14,8 @@
     "lint": "eslint --ext .ts .",
     "lint:fix": "yarn lint --fix",
     "format": "prettier .",
-    "format:fix": "yarn format -w"
+    "format:fix": "yarn format -w",
+    "postinstall": "yarn codegen"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "0.55.0",
