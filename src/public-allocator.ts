@@ -12,7 +12,8 @@ import {
   Account,
   MarketFlowCapsSet,
   MetaMorpho,
-  MetaMorphoAllocator, MetaMorphoMarket,
+  MetaMorphoAllocator,
+  MetaMorphoMarket,
   MetaMorphoPublicAllocator,
   MetaMorphoPublicAllocatorMarket,
   PublicAllocatorReallocationToEvent,
@@ -238,9 +239,6 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
   setFlowCapsEvent.save();
 
   for (let i = 0; i < event.params.config.length; i++) {
-
-
-
     const config = event.params.config[i];
 
     const mmMarket = MetaMorphoMarket.load(
