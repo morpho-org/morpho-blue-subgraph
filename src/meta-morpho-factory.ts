@@ -48,5 +48,7 @@ export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
     event.params.metaMorpho
   ).getAccount().id;
 
+  metaMorpho.hasPublicAllocator = false;
+
   metaMorpho.save();
 }

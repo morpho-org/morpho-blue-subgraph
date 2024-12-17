@@ -47,6 +47,7 @@ import {
   ReallocateWithdraw as ReallocateWithdrawEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
+import { loadPublicAllocatorVault } from "./public-allocator";
 import { AccountManager } from "./sdk/account";
 import {
   loadMetaMorpho,
@@ -58,6 +59,7 @@ import {
 } from "./sdk/metamorpho";
 import { TokenManager } from "./sdk/token";
 import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
+import { getPublicAllocatorAddress } from "./utils/publicAllocator";
 import { cloneRate } from "./utils/rate";
 
 export function handleSubmitMarketRemoval(
@@ -394,7 +396,23 @@ export function handleSetIsAllocator(event: SetIsAllocatorEvent): void {
     allocator.metaMorpho = mm.id;
   }
   allocator.isCurrentAllocator = event.params.isAllocator;
+  allocator.isPublicAllocator = getPublicAllocatorAddress().equals(
+    event.params.allocator
+  );
+
   allocator.save();
+
+  if (allocator.isPublicAllocator && event.params.isAllocator) {
+    mm.hasPublicAllocator = true;
+
+    // Update the public allocator vault. It can be created before the allocator is set, so we need to update it here.
+    const publicAllocatorVault = loadPublicAllocatorVault(event.address);
+    publicAllocatorVault.allocator = allocator.id;
+    publicAllocatorVault.save();
+  } else {
+    mm.hasPublicAllocator = false;
+  }
+  mm.save();
 
   const allocatorSet = new AllocatorSet(
     event.transaction.hash.concat(Bytes.fromI32(event.logIndex.toI32()))
@@ -420,6 +438,7 @@ export function handleSetSkimRecipient(event: SetSkimRecipientEvent): void {}
 export function handleSetSupplyQueue(event: SetSupplyQueueEvent): void {
   // Supply queue on subgraph is a list of MetaMorphoMarket ids, not Market ids.
   const mm = loadMetaMorpho(event.address);
+
   const newSupplyQueue: Array<Bytes> = [];
   const addedMarkets: Array<Bytes> = [];
   const seen = new Map<Bytes, boolean>();

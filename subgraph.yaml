@@ -133,6 +133,43 @@ dataSources:
             address,string,string,bytes32)
           handler: handleCreateMetaMorpho
       file: ./src/meta-morpho-factory.ts
+  - kind: ethereum
+    name: PublicAllocator
+    network: mainnet
+    source:
+      address: "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D"
+      abi: PublicAllocator
+      startBlock: 19375099
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PublicReallocateTo
+        - PublicWithdrawal
+        - SetAdmin
+        - SetFee
+        - SetFlowCaps
+        - TransferFee
+      abis:
+        - name: PublicAllocator
+          file: ./abis/PublicAllocator.json
+      eventHandlers:
+        - event: PublicReallocateTo(indexed address,indexed address,indexed
+            bytes32,uint256)
+          handler: handlePublicReallocateTo
+        - event: PublicWithdrawal(indexed address,indexed address,indexed bytes32,uint256)
+          handler: handlePublicWithdrawal
+        - event: SetAdmin(indexed address,indexed address,address)
+          handler: handleSetAdmin
+        - event: SetFee(indexed address,indexed address,uint256)
+          handler: handleSetFee
+        - event: SetFlowCaps(indexed address,indexed
+            address,(bytes32,(uint128,uint128))[])
+          handler: handleSetFlowCaps
+        - event: TransferFee(indexed address,indexed address,uint256,indexed address)
+          handler: handleTransferFee
+      file: ./src/public-allocator.ts
 templates:
   - kind: ethereum
     name: MetaMorpho
