@@ -13,6 +13,7 @@ import {
   MarketFlowCapsSet,
   MetaMorpho,
   MetaMorphoAllocator,
+  MetaMorphoMarket,
   MetaMorphoPublicAllocator,
   MetaMorphoPublicAllocatorMarket,
   PublicAllocatorReallocationToEvent,
@@ -239,6 +240,21 @@ export function handleSetFlowCaps(event: SetFlowCaps): void {
 
   for (let i = 0; i < event.params.config.length; i++) {
     const config = event.params.config[i];
+
+    const mmMarket = MetaMorphoMarket.load(
+      event.params.vault.concat(config.id)
+    );
+
+    if (
+      !mmMarket &&
+      config.caps.maxIn.isZero() &&
+      config.caps.maxOut.isZero()
+    ) {
+      // because of the following line on the PA contract, you can set a flow cap to 0 for a non-listed market
+      // If the mmMarket doesn't exist at all, we just skip the cap configuration
+      // https://github.com/morpho-org/public-allocator/blob/main/src/PublicAllocator.sol#L85
+      continue;
+    }
 
     const paMarket = loadPublicAllocatorMarket(event.params.vault, config.id);
 

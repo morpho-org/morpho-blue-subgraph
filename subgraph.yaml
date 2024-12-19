@@ -137,8 +137,8 @@ dataSources:
     name: PublicAllocator
     network: mainnet
     source:
-      address: "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D"
       abi: PublicAllocator
+      address: "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D"
       startBlock: 19375099
     mapping:
       kind: ethereum/events
