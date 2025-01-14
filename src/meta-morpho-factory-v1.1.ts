@@ -16,7 +16,7 @@ export function handleCreateMetaMorpho(event: CreateMetaMorphoEvent): void {
   metaMorpho.name = event.params.name;
   metaMorpho.symbol = event.params.symbol;
   metaMorpho.decimals = 18;
-  metaMorpho.version = "1.0";
+  metaMorpho.version = "1.1";
   metaMorpho.asset = new TokenManager(event.params.asset, event).getToken().id;
 
   metaMorpho.owner = new AccountManager(

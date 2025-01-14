@@ -23,12 +23,12 @@
       },
       {
         "internalType": "string",
-        "name": "_name",
+        "name": "__name",
         "type": "string"
       },
       {
         "internalType": "string",
-        "name": "_symbol",
+        "name": "__symbol",
         "type": "string"
       }
     ],
@@ -928,6 +928,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      }
+    ],
+    "name": "SetName",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "newSkimRecipient",
@@ -954,6 +967,19 @@
       }
     ],
     "name": "SetSupplyQueue",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "symbol",
+        "type": "string"
+      }
+    ],
+    "name": "SetSymbol",
     "type": "event"
   },
   {
@@ -1125,6 +1151,19 @@
       }
     ],
     "name": "UpdateLastTotalAssets",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newLostAssets",
+        "type": "uint256"
+      }
+    ],
+    "name": "UpdateLostAssets",
     "type": "event"
   },
   {
@@ -1565,6 +1604,19 @@
   {
     "inputs": [],
     "name": "lastTotalAssets",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lostAssets",
     "outputs": [
       {
         "internalType": "uint256",
@@ -2119,6 +2171,19 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "newName",
+        "type": "string"
+      }
+    ],
+    "name": "setName",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "newSkimRecipient",
         "type": "address"
@@ -2138,6 +2203,19 @@
       }
     ],
     "name": "setSupplyQueue",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "newSymbol",
+        "type": "string"
+      }
+    ],
+    "name": "setSymbol",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2343,7 +2421,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "assets",
+        "name": "",
         "type": "uint256"
       }
     ],

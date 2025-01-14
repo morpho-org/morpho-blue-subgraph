@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: MorphoBlue
-    network: mainnet
+    network: base
     source:
       abi: MorphoBlue
       address: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
-      startBlock: 18883124
+      startBlock: 13977148
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -94,11 +94,11 @@ dataSources:
       file: ./src/morpho-blue.ts
   - kind: ethereum
     name: MetaMorphoFactory
-    network: mainnet
+    network: base
     source:
       abi: MetaMorphoFactory
       address: "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101"
-      startBlock: 18925584
+      startBlock: 13978134
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -133,13 +133,55 @@ dataSources:
             address,string,string,bytes32)
           handler: handleCreateMetaMorpho
       file: ./src/meta-morpho-factory.ts
+
+  - kind: ethereum
+    name: MetaMorphoFactoryV11
+    network: base
+    source:
+      abi: MetaMorphoFactory
+      address: "0x1897A8997241C1cD4bD0698647e4EB7213535c24"
+      startBlock: 21439510
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - CreateMetaMorpho
+      abis:
+        - name: MetaMorphoFactory
+          file: ./abis/MetaMorphoFactory.json
+        - name: MorphoBlue
+          file: ./abis/MorphoBlue.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ERC4626
+          file: ./abis/ERC4626.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+        - name: IRM
+          file: ./abis/IRM.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+        - name: ChainlinkPriceFeed
+          file: ./abis/chainlink/ChainlinkPriceFeed.json
+        - name: WstEth
+          file: ./abis/WstEth.json
+        - name: REth
+          file: ./abis/REth.json
+      eventHandlers:
+        - event: CreateMetaMorpho(indexed address,indexed address,address,uint256,indexed
+            address,string,string,bytes32)
+          handler: handleCreateMetaMorpho
+      file: ./src/meta-morpho-factory-v1.1.ts
   - kind: ethereum
     name: PublicAllocator
-    network: mainnet
+    network: base
     source:
       abi: PublicAllocator
-      address: "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D"
-      startBlock: 19375099
+      address: "0xA090dD1a701408Df1d4d0B85b716c87565f90467"
+      startBlock: 13979545
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -173,7 +215,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: MetaMorpho
-    network: mainnet
+    network: base
     source:
       abi: MetaMorpho
     mapping:
@@ -281,12 +323,16 @@ templates:
           handler: handleTransfer
         - event: UpdateLastTotalAssets(uint256)
           handler: handleUpdateLastTotalAssets
+        - event: SetName(string)
+          handler: handleSetName
+        - event: SetSymbol(string)
+          handler: handleSetSymbol
         - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
           handler: handleWithdraw
       file: ./src/meta-morpho.ts
   - kind: ethereum
     name: ChainlinkAggregatorProxy
-    network: mainnet
+    network: base
     source:
       abi: ChainlinkAggregatorProxy
     mapping:
@@ -318,7 +364,7 @@ templates:
       file: ./src/chainlink.ts
   - kind: ethereum
     name: ChainlinkPriceFeed
-    network: mainnet
+    network: base
     source:
       abi: ChainlinkPriceFeed
     mapping:

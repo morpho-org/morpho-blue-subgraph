@@ -45,6 +45,8 @@ import {
   RevokePendingTimelock as RevokePendingTimelockEvent,
   ReallocateSupply as ReallocateSupplyEvent,
   ReallocateWithdraw as ReallocateWithdrawEvent,
+  SetName as SetNameEvent,
+  SetSymbol as SetSymbolEvent,
 } from "../generated/templates/MetaMorpho/MetaMorpho";
 
 import { loadPublicAllocatorVault } from "./public-allocator";
@@ -61,6 +63,33 @@ import { TokenManager } from "./sdk/token";
 import { toMetaMorphoAssetsUp } from "./utils/metaMorphoUtils";
 import { getPublicAllocatorAddress } from "./utils/publicAllocator";
 import { cloneRate } from "./utils/rate";
+
+export function handleSetName(event: SetNameEvent): void {
+  const mm = loadMetaMorpho(event.address);
+
+  if (mm.version !== "1.1") {
+    log.critical("MetaMorpho {} has a name set on a non 1.1 version", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+  mm.name = event.params.name;
+  mm.save();
+}
+
+export function handleSetSymbol(event: SetSymbolEvent): void {
+  const mm = loadMetaMorpho(event.address);
+  mm.symbol = event.params.symbol;
+
+  if (mm.version !== "1.1") {
+    log.critical("MetaMorpho {} has a symbol set on a non 1.1 version", [
+      event.address.toHexString(),
+    ]);
+    return;
+  }
+
+  mm.save();
+}
 
 export function handleSubmitMarketRemoval(
   event: SubmitMarketRemovalEvent
@@ -214,7 +243,7 @@ export function handleOwnershipTransferred(
 export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
   const mmMarket = MetaMorphoMarket.load(event.address.concat(event.params.id));
 
-  if(!mmMarket) {
+  if (!mmMarket) {
     log.warning("MetaMorphoMarket {} not found", [
       event.address.toHexString(),
       event.params.id.toString(),

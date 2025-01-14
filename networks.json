@@ -9,6 +9,10 @@
       "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
       "startBlock": 18925584
     },
+    "MetaMorphoFactoryV11": {
+      "address": "0x1897A8997241C1cD4bD0698647e4EB7213535c24",
+      "startBlock": 21439510
+    },
     "PublicAllocator": {
       "address": "0xfd32fA2ca22c76dD6E550706Ad913FC6CE91c75D",
       "startBlock": 19375099
@@ -23,6 +27,10 @@
     "MetaMorphoFactory": {
       "address": "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101",
       "startBlock": 13978134
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0xFf62A7c278C62eD665133147129245053Bbf5918",
+      "startBlock": 23928808
     },
     "PublicAllocator": {
       "address": "0xA090dD1a701408Df1d4d0B85b716c87565f90467",

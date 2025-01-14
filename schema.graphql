@@ -2043,6 +2043,7 @@ type BadDebtRealization @entity {
 
 type MetaMorpho @entity {
   id: Bytes!
+  version: String!
   name: String!
   symbol: String!
   decimals: Int!
