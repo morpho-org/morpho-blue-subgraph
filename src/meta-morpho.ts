@@ -212,7 +212,15 @@ export function handleOwnershipTransferred(
 }
 
 export function handleRevokePendingCap(event: RevokePendingCapEvent): void {
-  const mmMarket = loadMetaMorphoMarket(event.address, event.params.id);
+  const mmMarket = MetaMorphoMarket.load(event.address.concat(event.params.id));
+
+  if(!mmMarket) {
+    log.warning("MetaMorphoMarket {} not found", [
+      event.address.toHexString(),
+      event.params.id.toString(),
+    ]);
+    return;
+  }
 
   if (!mmMarket.currentPendingCap) {
     log.warning("MetaMorphoMarket {} has no pending cap", [
