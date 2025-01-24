@@ -67,12 +67,6 @@ import { cloneRate } from "./utils/rate";
 export function handleSetName(event: SetNameEvent): void {
   const mm = loadMetaMorpho(event.address);
 
-  if (mm.version !== "1.1") {
-    log.critical("MetaMorpho {} has a name set on a non 1.1 version", [
-      event.address.toHexString(),
-    ]);
-    return;
-  }
   mm.name = event.params.name;
   mm.save();
 }
@@ -80,13 +74,6 @@ export function handleSetName(event: SetNameEvent): void {
 export function handleSetSymbol(event: SetSymbolEvent): void {
   const mm = loadMetaMorpho(event.address);
   mm.symbol = event.params.symbol;
-
-  if (mm.version !== "1.1") {
-    log.critical("MetaMorpho {} has a symbol set on a non 1.1 version", [
-      event.address.toHexString(),
-    ]);
-    return;
-  }
 
   mm.save();
 }
