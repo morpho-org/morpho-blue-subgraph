@@ -2,7 +2,7 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AllocatorSet,
-  FeeRecipient,
+  FeeRecipient, MetaMorpho,
   MetaMorphoAllocator,
   MetaMorphoDeposit,
   MetaMorphoMarket,
@@ -65,14 +65,23 @@ import { getPublicAllocatorAddress } from "./utils/publicAllocator";
 import { cloneRate } from "./utils/rate";
 
 export function handleSetName(event: SetNameEvent): void {
-  const mm = loadMetaMorpho(event.address);
+  const mm = MetaMorpho.load(event.address);
+  if (!mm) {
+    log.info("MetaMorpho not indexed: {}", [event.address.toHexString()]);
+    return;
+  }
 
   mm.name = event.params.name;
   mm.save();
 }
 
 export function handleSetSymbol(event: SetSymbolEvent): void {
-  const mm = loadMetaMorpho(event.address);
+  const mm = MetaMorpho.load(event.address);
+  if (!mm) {
+    log.info("MetaMorpho not indexed: {}", [event.address.toHexString()]);
+    return;
+  }
+
   mm.symbol = event.params.symbol;
 
   mm.save();
