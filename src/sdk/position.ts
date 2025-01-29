@@ -273,9 +273,13 @@ export class PositionManager {
     );
 
     position.balance = totalBorrow;
-    position.principal = position.principal!.minus(amountRepaid);
+    if (position.principal! > amountRepaid) {
+      position.principal = position.principal!.minus(amountRepaid);
+    } else {
+      position.principal = BigInt.zero();
+    }
     position.repayCount += 1;
-    this._position = position;
+
     if (position.shares!.equals(BigInt.zero())) {
       this._closePosition(position, event);
     }
