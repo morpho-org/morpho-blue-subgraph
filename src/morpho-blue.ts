@@ -33,6 +33,7 @@ import {
 import { DataManager } from "./sdk/manager";
 import { PositionManager } from "./sdk/position";
 import { TokenManager } from "./sdk/token";
+import { zeroFlorSub } from "./utils/math";
 
 export function handleAccrueInterest(event: AccrueInterest): void {
   const market = getMarket(event.params.id);
@@ -237,7 +238,7 @@ export function handleRepay(event: Repay): void {
     event.params.shares
   );
 
-  market.totalBorrow = market.totalBorrow.minus(event.params.assets);
+  market.totalBorrow = zeroFlorSub(market.totalBorrow, event.params.assets);
   market.totalBorrowShares = market.totalBorrowShares.minus(
     event.params.shares
   );

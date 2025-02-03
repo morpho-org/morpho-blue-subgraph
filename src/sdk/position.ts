@@ -9,6 +9,7 @@ import {
 } from "../../generated/schema";
 import { getProtocol } from "../initializers/protocol";
 import { toAssetsDown, toAssetsUp } from "../maths/shares";
+import { zeroFlorSub } from "../utils/math";
 
 import {
   exponentToBigDecimal,
@@ -58,6 +59,7 @@ export class PositionManager {
 
     return Position.load(positionID);
   }
+
   addCollateralPosition(
     event: ethereum.Event,
     amountSupplied: BigInt
@@ -273,11 +275,8 @@ export class PositionManager {
     );
 
     position.balance = totalBorrow;
-    if (position.principal! > amountRepaid) {
-      position.principal = position.principal!.minus(amountRepaid);
-    } else {
-      position.principal = BigInt.zero();
-    }
+    position.principal = zeroFlorSub(position.principal!, amountRepaid);
+
     position.repayCount += 1;
 
     if (position.shares!.equals(BigInt.zero())) {

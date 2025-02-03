@@ -2,7 +2,8 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AllocatorSet,
-  FeeRecipient, MetaMorpho,
+  FeeRecipient,
+  MetaMorpho,
   MetaMorphoAllocator,
   MetaMorphoDeposit,
   MetaMorphoMarket,
