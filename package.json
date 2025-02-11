@@ -6,6 +6,7 @@
     "build:mainnet": "graph build --network mainnet",
     "build:base": "graph build --network base",
     "deploy:studio:base": "graph deploy --studio morpho-blue-base --network base",
+    "deploy:studio:optimism": "graph deploy --studio morpho-blue-optimism --network optimism",
     "deploy:studio:mainnet": "graph deploy --studio morpho-blue --network mainnet",
     "create-local": "graph create --node http://localhost:8020/ morpho-org/morpho-blue",
     "remove-local": "graph remove --node http://localhost:8020/ morpho-org/morpho-blue",

@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: MorphoBlue
-    network: base
+    network: optimism
     source:
       abi: MorphoBlue
-      address: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb"
-      startBlock: 13977148
+      address: "0xce95AfbB8EA029495c66020883F87aaE8864AF92"
+      startBlock: 130770075
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -94,11 +94,11 @@ dataSources:
       file: ./src/morpho-blue.ts
   - kind: ethereum
     name: MetaMorphoFactory
-    network: base
+    network: optimism
     source:
       abi: MetaMorphoFactory
-      address: "0xa9c3d3a366466fa809d1ae982fb2c46e5fc41101"
-      startBlock: 13978134
+      address: "0x0000000000000000000000000000000000000000"
+      startBlock: 130770189
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -133,14 +133,13 @@ dataSources:
             address,string,string,bytes32)
           handler: handleCreateMetaMorpho
       file: ./src/meta-morpho-factory.ts
-
   - kind: ethereum
     name: MetaMorphoFactoryV11
-    network: base
+    network: optimism
     source:
       abi: MetaMorphoFactory
-      address: "0x1897A8997241C1cD4bD0698647e4EB7213535c24"
-      startBlock: 21439510
+      address: "0x3Bb6A6A0Bc85b367EFE0A5bAc81c5E52C892839a"
+      startBlock: 130770189
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -177,11 +176,11 @@ dataSources:
       file: ./src/meta-morpho-factory-v1.1.ts
   - kind: ethereum
     name: PublicAllocator
-    network: base
+    network: optimism
     source:
       abi: PublicAllocator
-      address: "0xA090dD1a701408Df1d4d0B85b716c87565f90467"
-      startBlock: 13979545
+      address: "0x0d68a97324E602E02799CD83B42D337207B40658"
+      startBlock: 130770075
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -215,7 +214,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: MetaMorpho
-    network: base
+    network: optimism
     source:
       abi: MetaMorpho
     mapping:
@@ -332,7 +331,7 @@ templates:
       file: ./src/meta-morpho.ts
   - kind: ethereum
     name: ChainlinkAggregatorProxy
-    network: base
+    network: optimism
     source:
       abi: ChainlinkAggregatorProxy
     mapping:
@@ -364,7 +363,7 @@ templates:
       file: ./src/chainlink.ts
   - kind: ethereum
     name: ChainlinkPriceFeed
-    network: base
+    network: optimism
     source:
       abi: ChainlinkPriceFeed
     mapping:

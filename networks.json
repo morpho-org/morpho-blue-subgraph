@@ -36,5 +36,23 @@
       "address": "0xA090dD1a701408Df1d4d0B85b716c87565f90467",
       "startBlock": 13979545
     }
+  },
+  "optimism": {
+    "MorphoBlue": {
+      "address": "0xce95AfbB8EA029495c66020883F87aaE8864AF92",
+      "startBlock": 130770075
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0x3Bb6A6A0Bc85b367EFE0A5bAc81c5E52C892839a",
+      "startBlock": 130770189
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 130770189
+    },
+    "PublicAllocator": {
+      "address": "0x0d68a97324E602E02799CD83B42D337207B40658",
+      "startBlock": 130770075
+    }
   }
 }
