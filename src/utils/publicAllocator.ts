@@ -11,6 +11,8 @@ export function getPublicAllocatorAddress(): Address {
       return Address.fromString("0x0d68a97324E602E02799CD83B42D337207B40658");
     case "arbitrum-one":
       return Address.fromString("0x769583Af5e9D03589F159EbEC31Cc2c23E8C355E");
+    case "fraxtal":
+      return Address.fromString("0x37a888192165fC39884f87c64E2476BfD2C09675");
     default:
       return Address.zero();
   }

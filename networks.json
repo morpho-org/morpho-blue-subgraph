@@ -72,5 +72,23 @@
       "address": "0x769583Af5e9D03589F159EbEC31Cc2c23E8C355E",
       "startBlock": 296446593
     }
+  },
+  "fraxtal": {
+    "MorphoBlue": {
+      "address": "0xa6030627d724bA78a59aCf43Be7550b4C5a0653b",
+      "startBlock": 15317931
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0x1beE9D41AE95162483c80fE2eB91d147F5Cf05Ee",
+      "startBlock": 15318061
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 15318061
+    },
+    "PublicAllocator": {
+      "address": "0x37a888192165fC39884f87c64E2476BfD2C09675",
+      "startBlock": 15317931
+    }
   }
 }
