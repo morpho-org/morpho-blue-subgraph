@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: MorphoBlue
-    network: optimism
+    network: arbitrum-one
     source:
       abi: MorphoBlue
-      address: "0xce95AfbB8EA029495c66020883F87aaE8864AF92"
-      startBlock: 130770075
+      address: "0x6c247b1F6182318877311737BaC0844bAa518F5e"
+      startBlock: 296446593
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -94,11 +94,11 @@ dataSources:
       file: ./src/morpho-blue.ts
   - kind: ethereum
     name: MetaMorphoFactory
-    network: optimism
+    network: arbitrum-one
     source:
       abi: MetaMorphoFactory
       address: "0x0000000000000000000000000000000000000000"
-      startBlock: 130770189
+      startBlock: 296446593
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -135,11 +135,11 @@ dataSources:
       file: ./src/meta-morpho-factory.ts
   - kind: ethereum
     name: MetaMorphoFactoryV11
-    network: optimism
+    network: arbitrum-one
     source:
       abi: MetaMorphoFactory
-      address: "0x3Bb6A6A0Bc85b367EFE0A5bAc81c5E52C892839a"
-      startBlock: 130770189
+      address: "0x878988f5f561081deEa117717052164ea1Ef0c82"
+      startBlock: 296447195
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -176,11 +176,11 @@ dataSources:
       file: ./src/meta-morpho-factory-v1.1.ts
   - kind: ethereum
     name: PublicAllocator
-    network: optimism
+    network: arbitrum-one
     source:
       abi: PublicAllocator
-      address: "0x0d68a97324E602E02799CD83B42D337207B40658"
-      startBlock: 130770075
+      address: "0x769583Af5e9D03589F159EbEC31Cc2c23E8C355E"
+      startBlock: 296446593
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -214,7 +214,7 @@ dataSources:
 templates:
   - kind: ethereum
     name: MetaMorpho
-    network: optimism
+    network: arbitrum-one
     source:
       abi: MetaMorpho
     mapping:
@@ -331,7 +331,7 @@ templates:
       file: ./src/meta-morpho.ts
   - kind: ethereum
     name: ChainlinkAggregatorProxy
-    network: optimism
+    network: arbitrum-one
     source:
       abi: ChainlinkAggregatorProxy
     mapping:
@@ -363,7 +363,7 @@ templates:
       file: ./src/chainlink.ts
   - kind: ethereum
     name: ChainlinkPriceFeed
-    network: optimism
+    network: arbitrum-one
     source:
       abi: ChainlinkPriceFeed
     mapping:

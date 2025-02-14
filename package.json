@@ -8,6 +8,7 @@
     "deploy:studio:base": "graph deploy --studio morpho-blue-base --network base",
     "deploy:studio:optimism": "graph deploy --studio morpho-blue-optimism --network optimism",
     "deploy:studio:arbitrum": "graph deploy --studio morpho-blue-arbitrum --network arbitrum-one",
+    "deploy:studio:polygon-pos": "graph deploy --studio morpho-blue-polygon-pos --network matic",
     "deploy:studio:fraxtal": "graph deploy --studio morpho-blue-fraxtal --network fraxtal",
     "deploy:studio:ink": "graph deploy --studio morpho-blue-ink --network ink",
     "deploy:studio:mainnet": "graph deploy --studio morpho-blue --network mainnet",
