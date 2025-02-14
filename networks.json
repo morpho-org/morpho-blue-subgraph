@@ -54,5 +54,23 @@
       "address": "0x0d68a97324E602E02799CD83B42D337207B40658",
       "startBlock": 130770075
     }
+  },
+  "arbitrum-one": {
+    "MorphoBlue": {
+      "address": "0x6c247b1F6182318877311737BaC0844bAa518F5e",
+      "startBlock": 296446593
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0x878988f5f561081deEa117717052164ea1Ef0c82",
+      "startBlock": 296447195
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 296446593
+    },
+    "PublicAllocator": {
+      "address": "0x769583Af5e9D03589F159EbEC31Cc2c23E8C355E",
+      "startBlock": 296446593
+    }
   }
 }
