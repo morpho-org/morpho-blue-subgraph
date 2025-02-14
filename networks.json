@@ -108,5 +108,23 @@
       "address": "0x85416891752a6B81106c1C2999AE1AF5d8Cd3357",
       "startBlock": 4078776
     }
+  },
+  "matic": {
+    "MorphoBlue": {
+      "address": "0x1bF0c2541F820E775182832f06c0B7Fc27A25f67",
+      "startBlock": 66931042
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0xa9c87daB340631C34BB738625C70499e29ddDC98",
+      "startBlock":66931118
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock":66931118
+    },
+    "PublicAllocator": {
+      "address": "0xfac15aff53ADd2ff80C2962127C434E8615Df0d3",
+      "startBlock": 66931042
+    }
   }
 }

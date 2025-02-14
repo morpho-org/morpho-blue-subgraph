@@ -1,4 +1,4 @@
-import { Address, dataSource, log } from "@graphprotocol/graph-ts";
+import { Address, dataSource } from "@graphprotocol/graph-ts";
 
 export function getPublicAllocatorAddress(): Address {
   const network = dataSource.network();
@@ -15,6 +15,8 @@ export function getPublicAllocatorAddress(): Address {
       return Address.fromString("0x37a888192165fC39884f87c64E2476BfD2C09675");
     case "ink":
       return Address.fromString("0x85416891752a6B81106c1C2999AE1AF5d8Cd3357");
+    case "matic":
+      return Address.fromString("0xfac15aff53ADd2ff80C2962127C434E8615Df0d3");
     default:
       return Address.zero();
   }
