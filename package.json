@@ -9,6 +9,7 @@
     "deploy:studio:optimism": "graph deploy --studio morpho-blue-optimism --network optimism",
     "deploy:studio:arbitrum": "graph deploy --studio morpho-blue-arbitrum --network arbitrum-one",
     "deploy:studio:fraxtal": "graph deploy --studio morpho-blue-fraxtal --network fraxtal",
+    "deploy:studio:ink": "graph deploy --studio morpho-blue-ink --network ink",
     "deploy:studio:mainnet": "graph deploy --studio morpho-blue --network mainnet",
     "create-local": "graph create --node http://localhost:8020/ morpho-org/morpho-blue",
     "remove-local": "graph remove --node http://localhost:8020/ morpho-org/morpho-blue",

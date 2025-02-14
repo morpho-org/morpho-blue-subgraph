@@ -90,5 +90,23 @@
       "address": "0x37a888192165fC39884f87c64E2476BfD2C09675",
       "startBlock": 15317931
     }
+  },
+  "ink": {
+    "MorphoBlue": {
+      "address": "0x857f3EefE8cbda3Bc49367C996cd664A880d3042",
+      "startBlock": 4078776
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0xb00123B1058c13559408b9D609eD417617f588eD",
+      "startBlock": 4078776
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 4078776
+    },
+    "PublicAllocator": {
+      "address": "0x85416891752a6B81106c1C2999AE1AF5d8Cd3357",
+      "startBlock": 4078776
+    }
   }
 }

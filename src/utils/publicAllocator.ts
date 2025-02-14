@@ -13,6 +13,8 @@ export function getPublicAllocatorAddress(): Address {
       return Address.fromString("0x769583Af5e9D03589F159EbEC31Cc2c23E8C355E");
     case "fraxtal":
       return Address.fromString("0x37a888192165fC39884f87c64E2476BfD2C09675");
+    case "ink":
+      return Address.fromString("0x85416891752a6B81106c1C2999AE1AF5d8Cd3357");
     default:
       return Address.zero();
   }
