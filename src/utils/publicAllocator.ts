@@ -17,6 +17,8 @@ export function getPublicAllocatorAddress(): Address {
       return Address.fromString("0x85416891752a6B81106c1C2999AE1AF5d8Cd3357");
     case "matic":
       return Address.fromString("0xfac15aff53ADd2ff80C2962127C434E8615Df0d3");
+    case "scroll":
+      return Address.fromString("0x8a7f671E45E51dE245649Cf916cA0256FB8a9927");
     default:
       return Address.zero();
   }

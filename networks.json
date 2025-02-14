@@ -116,15 +116,33 @@
     },
     "MetaMorphoFactoryV11": {
       "address": "0xa9c87daB340631C34BB738625C70499e29ddDC98",
-      "startBlock":66931118
+      "startBlock": 66931118
     },
     "MetaMorphoFactory": {
       "address": "0x0000000000000000000000000000000000000000",
-      "startBlock":66931118
+      "startBlock": 66931118
     },
     "PublicAllocator": {
       "address": "0xfac15aff53ADd2ff80C2962127C434E8615Df0d3",
       "startBlock": 66931042
+    }
+  },
+  "scroll": {
+    "MorphoBlue": {
+      "address": "0x2d012EdbAdc37eDc2BC62791B666f9193FDF5a55",
+      "startBlock": 12842868
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0x587605481C744876a08CD475ECff5e8cD853153B",
+      "startBlock": 12842938
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 12842938
+    },
+    "PublicAllocator": {
+      "address": "0x8a7f671E45E51dE245649Cf916cA0256FB8a9927",
+      "startBlock": 12842868
     }
   }
 }
