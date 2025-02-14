@@ -26,6 +26,9 @@ enum Network {
   GNOSIS
   GOERLI
   BASE
+  INK
+  SCROLL
+  FRAXTAL
 }
 
 enum ProtocolType {

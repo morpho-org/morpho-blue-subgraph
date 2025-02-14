@@ -1,4 +1,4 @@
-import { Address, BigDecimal, dataSource } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, dataSource, log } from "@graphprotocol/graph-ts";
 
 import { _MarketList, LendingProtocol } from "../../generated/schema";
 import {
@@ -10,28 +10,64 @@ import {
   INT_ZERO,
 } from "../sdk/constants";
 
-const MORPHO_BLUE_ADDRESS = Address.fromString(
-  "0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb"
-);
+const getMorphoBlueAddress = (): Address => {
+  const network = dataSource.network();
+  if (network == "mainnet") {
+    return Address.fromString("0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb");
+  }
+  if (network == "base") {
+    return Address.fromString("0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb");
+  }
+  if (network == "optimism") {
+    return Address.fromString("0xce95AfbB8EA029495c66020883F87aaE8864AF92");
+  }
+  if (network == "arbitrum-one") {
+    return Address.fromString("0x6c247b1F6182318877311737BaC0844bAa518F5e");
+  }
+  if (network == "fraxtal") {
+    return Address.fromString("0xa6030627d724bA78a59aCf43Be7550b4C5a0653b");
+  }
+  if (network == "ink") {
+    return Address.fromString("0x857f3EefE8cbda3Bc49367C996cd664A880d3042");
+  }
+  if (network == "matic") {
+    return Address.fromString("0x1bF0c2541F820E775182832f06c0B7Fc27A25f67");
+  }
+  if (network == "scroll") {
+    return Address.fromString("0x2d012EdbAdc37eDc2BC62791B666f9193FDF5a55");
+  }
 
+  log.critical("Unknown network {}", [network]);
+  return Address.zero();
+};
 let protocol: LendingProtocol | null = null;
 export function getProtocol(): LendingProtocol {
   if (protocol !== null) return protocol!;
-  protocol = LendingProtocol.load(MORPHO_BLUE_ADDRESS);
+  const morphoBlueAddress = getMorphoBlueAddress();
+
+  protocol = LendingProtocol.load(morphoBlueAddress);
   if (protocol) return protocol!;
   protocol = initBlue();
   return protocol!;
 }
 
+const getNetworkLabel = (): string => {
+  const network = dataSource.network();
+  if (network == "arbitrum-one") {
+    return "ARBITRUM_ONE";
+  }
+  return network.toUpperCase();
+};
+
 function initBlue(): LendingProtocol {
-  const protocol = new LendingProtocol(MORPHO_BLUE_ADDRESS);
+  const protocol = new LendingProtocol(getMorphoBlueAddress());
   protocol.protocol = "Morpho";
   protocol.name = "Morpho Blue";
   protocol.slug = "morpho-blue";
   protocol.schemaVersion = "3.0.0";
   protocol.subgraphVersion = "0.0.7";
   protocol.methodologyVersion = "1.0.0";
-  protocol.network = dataSource.network().toUpperCase();
+  protocol.network = getNetworkLabel();
   protocol.type = ProtocolType.LENDING;
   protocol.lendingType = LendingType.POOLED;
   protocol.poolCreatorPermissionType = PermissionType.PERMISSIONLESS;

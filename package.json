@@ -5,14 +5,14 @@
     "codegen": "graph codegen",
     "build:mainnet": "graph build --network mainnet",
     "build:base": "graph build --network base",
-    "deploy:studio:base": "graph deploy --studio morpho-blue-base --network base",
-    "deploy:studio:optimism": "graph deploy --studio morpho-blue-optimism --network optimism",
-    "deploy:studio:arbitrum": "graph deploy --studio morpho-blue-arbitrum --network arbitrum-one",
-    "deploy:studio:polygon-pos": "graph deploy --studio morpho-blue-polygon-pos --network matic",
-    "deploy:studio:fraxtal": "graph deploy --studio morpho-blue-fraxtal --network fraxtal",
-    "deploy:studio:ink": "graph deploy --studio morpho-blue-ink --network ink",
-    "deploy:studio:mainnet": "graph deploy --studio morpho-blue --network mainnet",
-    "deploy:studio:scroll": "graph deploy --studio morpho-blue-scroll --network scroll",
+    "deploy:studio:base": "graph deploy morpho-blue-base --network base",
+    "deploy:studio:optimism": "graph deploy morpho-blue-optimism --network optimism",
+    "deploy:studio:arbitrum": "graph deploy morpho-blue-arbitrum --network arbitrum-one",
+    "deploy:studio:polygon-pos": "graph deploy morpho-blue-polygon-pos --network matic",
+    "deploy:studio:fraxtal": "graph deploy morpho-blue-fraxtal --network fraxtal",
+    "deploy:studio:ink": "graph deploy morpho-blue-ink --network ink",
+    "deploy:studio:mainnet": "graph deploy morpho-blue --network mainnet",
+    "deploy:studio:scroll": "graph deploy morpho-blue-scroll --network scroll",
     "create-local": "graph create --node http://localhost:8020/ morpho-org/morpho-blue",
     "remove-local": "graph remove --node http://localhost:8020/ morpho-org/morpho-blue",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 morpho-org/morpho-blue",
@@ -24,8 +24,8 @@
     "postinstall": "yarn codegen"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.55.0",
-    "@graphprotocol/graph-ts": "0.30.0"
+    "@graphprotocol/graph-cli": "^0.95.0",
+    "@graphprotocol/graph-ts": "^0.37.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.4",
