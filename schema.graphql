@@ -8,6 +8,7 @@ enum Network {
   UNICHAIN
   SONIC
   MODE
+  HEMI
   CORN
   AURORA
   AVALANCHE

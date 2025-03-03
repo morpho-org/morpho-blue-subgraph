@@ -43,11 +43,14 @@ const getMorphoBlueAddress = (): Address => {
   if (network == "sonic") {
     return Address.fromString("0xd6c916eB7542D0Ad3f18AEd0FCBD50C582cfa95f");
   }
-  if (network == "mode") {
+  if (network == "mode-mainnet") {
     return Address.fromString("0xd85cE6BD68487E0AaFb0858FDE1Cd18c76840564");
   }
   if (network == "corn") {
     return Address.fromString("0xc2B1E031540e3F3271C5F3819F0cC7479a8DdD90");
+  }
+  if (network == "hemi") {
+    return Address.fromString("0xa4Ca2c2e25b97DA19879201bA49422bc6f181f42");
   }
 
   log.critical("Unknown network {}", [network]);
@@ -68,6 +71,9 @@ const getNetworkLabel = (): string => {
   const network = dataSource.network();
   if (network == "arbitrum-one") {
     return "ARBITRUM_ONE";
+  }
+  if (network == "mode-mainnet") {
+    return "MODE";
   }
   return network.toUpperCase();
 };
