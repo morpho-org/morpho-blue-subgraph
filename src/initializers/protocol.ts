@@ -46,6 +46,9 @@ const getMorphoBlueAddress = (): Address => {
   if (network == "mode") {
     return Address.fromString("0xd85cE6BD68487E0AaFb0858FDE1Cd18c76840564");
   }
+  if (network == "corn") {
+    return Address.fromString("0xc2B1E031540e3F3271C5F3819F0cC7479a8DdD90");
+  }
 
   log.critical("Unknown network {}", [network]);
   return Address.zero();

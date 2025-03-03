@@ -198,5 +198,23 @@
       "address": "0xEE868Bf3359DA30c10ea472EAEBFC0a06E8F0120",
       "startBlock": 19983370
     }
+  },
+  "corn": {
+    "MorphoBlue": {
+      "address": "0xc2B1E031540e3F3271C5F3819F0cC7479a8DdD90",
+      "startBlock": 251401
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0xe430821595602eA5DD0cD350f86987437c7362fA",
+      "startBlock": 253027
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 253027
+    },
+    "PublicAllocator": {
+      "address": "0xDFde06e2B2A2D718eE5560b73dA4F830E56A2f10",
+      "startBlock": 251401
+    }
   }
 }

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        network: [mainnet, base, scroll, optimism, arbitrum, polygon-pos, fraxtal, ink, unichain, sonic]
+        network: [mainnet, base, scroll, optimism, arbitrum, polygon-pos, fraxtal, ink, unichain, sonic, mode, corn]
 
     steps:
       - uses: actions/checkout@v3

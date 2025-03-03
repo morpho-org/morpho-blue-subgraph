@@ -46,5 +46,9 @@ export function getPublicAllocatorAddress(): Address {
     return Address.fromString("0x6FF33615e792E35ed1026ea7cACCf42D9BF83476");
   }
 
+  if (network == "corn") {
+    return Address.fromString("0xDFde06e2B2A2D718eE5560b73dA4F830E56A2f10");
+  }
+
   return Address.zero();
 }

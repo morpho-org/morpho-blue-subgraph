@@ -17,6 +17,7 @@ export namespace Network {
   export const UNICHAIN = "UNICHAIN";
   export const SONIC = "SONIC";
   export const MODE = "MODE";
+  export const CORN = "CORN";
   export const AURORA = "AURORA";
   export const AVALANCHE = "AVALANCHE";
   export const BOBA = "BOBA";
