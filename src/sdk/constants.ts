@@ -14,6 +14,7 @@ export namespace Network {
   export const ARBITRUM_ONE = "ARBITRUM_ONE";
   export const BASE = "BASE";
   export const ARWEAVE_MAINNET = "ARWEAVE_MAINNET";
+  export const UNICHAIN = "UNICHAIN";
   export const AURORA = "AURORA";
   export const AVALANCHE = "AVALANCHE";
   export const BOBA = "BOBA";

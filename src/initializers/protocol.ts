@@ -36,6 +36,9 @@ const getMorphoBlueAddress = (): Address => {
   if (network == "scroll") {
     return Address.fromString("0x2d012EdbAdc37eDc2BC62791B666f9193FDF5a55");
   }
+  if (network == "unichain") {
+    return Address.fromString("0x8f5ae9cddb9f68de460c77730b018ae7e04a140a");
+  }
 
   log.critical("Unknown network {}", [network]);
   return Address.zero();

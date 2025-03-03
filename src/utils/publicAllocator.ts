@@ -35,5 +35,9 @@ export function getPublicAllocatorAddress(): Address {
     return Address.fromString("0x8a7f671E45E51dE245649Cf916cA0256FB8a9927");
   }
 
+  if (network == "unichain") {
+    return Address.fromString("0xB0c9a107fA17c779B3378210A7a593e88938C7C9");
+  }
+
   return Address.zero();
 }

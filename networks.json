@@ -144,5 +144,23 @@
       "address": "0x8a7f671E45E51dE245649Cf916cA0256FB8a9927",
       "startBlock": 12842868
     }
+  },
+  "unichain": {
+    "MorphoBlue": {
+      "address": "0x8f5ae9cddb9f68de460c77730b018ae7e04a140a",
+      "startBlock": 9139027
+    },
+    "MetaMorphoFactoryV11": {
+      "address": "0xe9EdE3929F43a7062a007C3e8652e4ACa610Bdc0",
+      "startBlock": 9316789
+    },
+    "MetaMorphoFactory": {
+      "address": "0x0000000000000000000000000000000000000000",
+      "startBlock": 9316789
+    },
+    "PublicAllocator": {
+      "address": "0xB0c9a107fA17c779B3378210A7a593e88938C7C9",
+      "startBlock": 9139027
+    }
   }
 }
