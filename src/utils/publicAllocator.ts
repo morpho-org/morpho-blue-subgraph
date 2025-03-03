@@ -39,5 +39,9 @@ export function getPublicAllocatorAddress(): Address {
     return Address.fromString("0xB0c9a107fA17c779B3378210A7a593e88938C7C9");
   }
 
+  if (network == "sonic") {
+    return Address.fromString("0x6Cef2EDC70D87E8f1623f3096efF05d066E59B36");
+  }
+
   return Address.zero();
 }
