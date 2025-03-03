@@ -43,6 +43,9 @@ const getMorphoBlueAddress = (): Address => {
   if (network == "sonic") {
     return Address.fromString("0xd6c916eB7542D0Ad3f18AEd0FCBD50C582cfa95f");
   }
+  if (network == "mode") {
+    return Address.fromString("0xd85cE6BD68487E0AaFb0858FDE1Cd18c76840564");
+  }
 
   log.critical("Unknown network {}", [network]);
   return Address.zero();

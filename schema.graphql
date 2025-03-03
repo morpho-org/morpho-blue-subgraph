@@ -7,6 +7,7 @@ enum Network {
   ARWEAVE_MAINNET
   UNICHAIN
   SONIC
+  MODE
   AURORA
   AVALANCHE
   BOBA
