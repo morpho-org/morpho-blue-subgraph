@@ -229,9 +229,11 @@ export class PositionManager {
     position.principal = position.balance;
     position.withdrawCount += 1;
     position.withdrawCollateralCount += 1;
-    this._position = position;
+
     if (position.balance.equals(BigInt.zero())) {
       this._closePosition(position, event);
+    } else {
+      position.save();
     }
 
     this._position = position;
@@ -281,6 +283,8 @@ export class PositionManager {
 
     if (position.shares!.equals(BigInt.zero())) {
       this._closePosition(position, event);
+    } else {
+      position.save();
     }
 
     this._position = position;
@@ -326,9 +330,11 @@ export class PositionManager {
     position.balance = totalSupply;
     position.principal = position.principal!.minus(assets);
     position.withdrawCount += 1;
-    this._position = position;
+
     if (position.shares!.equals(BigInt.zero())) {
       this._closePosition(position, event);
+    } else {
+      position.save();
     }
 
     this._position = position;
