@@ -950,6 +950,9 @@ type Market @entity @regularPolling {
   " All flashloans made in this market"
   flashloans: [Flashloan!]! @derivedFrom(field: "market")
 
+  " All bad debt realization events in this market "
+  badDebtRealizations: [BadDebtRealization!]! @derivedFrom(field: "market")
+
   ### Addons ###
 
   collateralPositionCount: Int!
